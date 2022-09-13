@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=F}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(ggplot2)
@@ -55,7 +55,7 @@ veg %>%
   filter(plotID == "WREF_075") %>%
   ggplot() +
   geom_point(aes(x = adjEasting, y = adjNorthing, 
-                 size = stemDiameter, color = scientificName), shape = 1) +
+                 size = stemDiameter, color = taxonID), shape = 1) +
   labs(x = "Easting", y = "Northing")
 ```
 
@@ -65,7 +65,7 @@ Generate a histogram of tree heights for each plot. Color your stacked bar as a 
 
 ```{r}
 veg %>% ggplot() +
-  geom_histogram(aes(x = measurementHeight, fill = scientificName)) +
+  geom_histogram(aes(x = measurementHeight, fill = taxonID)) +
   facet_wrap(~ plotID)
 ```
 
@@ -75,6 +75,7 @@ Use dplyr to remove dead trees.
 # what are all the options in plantStatus?
 unique(veg$plantStatus)
 
+# filter out any dead/downed trees
 vegLiv = veg %>%
   filter(
     plantStatus != "Dead, broken bole", 
@@ -91,23 +92,23 @@ unique(vegLiv$plantStatus)
 Create a simple linear model that uses Diameter at Breast Height (DBH) and height to predict allometries. Print the summary information of your model.
 
 ```{r}
-model = lm(stemDistance ~ stemDiameter + measurementHeight,
+model = lm(bandStemDiameter ~ stemDiameter + measurementHeight,
             data = vegLiv)
 summary(model)
 ```
 
-## Question 6
+## Question 6 !!!!
 Plot your linear model.
 ```{r}
 plot.df = vegLiv %>%
-  select(stemDiameter, measurementHeight, stemDistance, scientificName) %>%
+  select(stemDiameter, measurementHeight, bandStemDiameter, taxonID) %>%
   na.omit()
 
 plot.df$predictions = predict(model)
 
 plot.df %>% ggplot() +
-  geom_line(aes(x = stemDiameter, y = predictions, color = scientificName)) +
-  geom_point(aes(x = stemDiameter, y = predictions, color = scientificName))
+  geom_point(aes(x = stemDiameter, y = predictions, color = taxonID)) +
+  geom_line(aes(x = stemDiameter, y = predictions))
 ```
 
 ## Question 7
@@ -115,11 +116,11 @@ Answer the following questions.
 
 **What do you think about your simile linear model? What are its limitations?**
 
-My simple linear model is pretty poor, which a vary low R2. Linear models have a lot of limitations, including the assumption of normally distributed residuals, the assumption of a linear relationship between your response and predictor(s), and the assumption of homoscedasticty. Also you just can't characterize complicated relationships with a simple linear model in general.
+My simple linear model is pretty poor, with a vary low R2. Linear models have a lot of limitations, including the assumption of normally distributed residuals, the assumption of a linear relationship between your response and predictor(s), and the assumption of homoscedasticty. It's very challenging characterize complicated relationships with a simple linear model in general.
 
 **How many unique species are present at WREF?**
 ```{r}
-length(unique(veg$scientificName))
+length(unique(veg$taxonID))
 ```
 
 There are 25 unique species at the WREF site.
@@ -145,9 +146,7 @@ head(vegDM, n = 5)
 liveTrees = length(unique(vegLiv$individualID))
 allTrees = length(unique(veg$individualID))
 livePropor = liveTrees / allTrees
-deadTreesProportion = 1 - livePropor
-
-print("Proportion of sampled trees that are dead: ", deadTreesProportion)
+(deadTreesProportion = 1 - livePropor)
 ```
 
 
