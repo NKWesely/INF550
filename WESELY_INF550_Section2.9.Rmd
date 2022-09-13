@@ -1,0 +1,154 @@
+---
+title: "INF 550 Intro to NEON Exercises Part 1"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(ggplot2)
+library(neonUtilities)
+library(geoNEON)
+library(sp)
+```
+
+# 2.9.1.1 Part 1: Sign up for and Use an NEON API Token:
+
+```{r}
+# call in your unique NEON API token
+load('neon_token_source.Rdata')
+
+# demonstrate the you can use your NEON API token to pull some data
+veglist <- loadByProduct(dpID="DP1.10098.001", site="WREF", package="basic", check.size=FALSE, token = NEON_TOKEN)
+
+# prep the data further
+vegmap <- getLocTOS(veglist$vst_mappingandtagging, 
+                    "vst_mappingandtagging")
+veg <- merge(veglist$vst_apparentindividual, vegmap, 
+             by=c("individualID","namedLocation",
+                  "domainID","siteID","plotID"))
+```
+
+
+
+# 2.9.1.2 Part 2: Further Investigation of NEON TOS Vegetation Structure Data
+## Question 1
+Convert the previous diagram plot into a ggplot.
+
+```{r}
+
+veg %>% 
+  filter(plotID == "WREF_075") %>%
+  ggplot() +
+  geom_point(aes(x = adjEasting, y = adjNorthing, 
+                 size = stemDiameter), shape = 1) +
+  labs(x = "Easting", y = "Northing")
+```
+
+## Question 2
+Set the color your circles to be a function of each species.
+
+```{r}
+veg %>% 
+  filter(plotID == "WREF_075") %>%
+  ggplot() +
+  geom_point(aes(x = adjEasting, y = adjNorthing, 
+                 size = stemDiameter, color = scientificName), shape = 1) +
+  labs(x = "Easting", y = "Northing")
+```
+
+
+## Question 3
+Generate a histogram of tree heights for each plot. Color your stacked bar as a function of each species.
+
+```{r}
+veg %>% ggplot() +
+  geom_histogram(aes(x = measurementHeight, fill = scientificName)) +
+  facet_wrap(~ plotID)
+```
+
+## Question 4
+Use dplyr to remove dead trees.
+```{r}
+# what are all the options in plantStatus?
+unique(veg$plantStatus)
+
+vegLiv = veg %>%
+  filter(
+    plantStatus != "Dead, broken bole", 
+    plantStatus != "Lost, fate unknown", 
+    plantStatus != "Standing dead", 
+    plantStatus != "No longer qualifies", 
+    plantStatus != "Downed")
+
+# make sure your filtering worked
+unique(vegLiv$plantStatus)
+```
+
+## Question 5
+Create a simple linear model that uses Diameter at Breast Height (DBH) and height to predict allometries. Print the summary information of your model.
+
+```{r}
+model = lm(stemDistance ~ stemDiameter + measurementHeight,
+            data = vegLiv)
+summary(model)
+```
+
+## Question 6
+Plot your linear model.
+```{r}
+plot.df = vegLiv %>%
+  select(stemDiameter, measurementHeight, stemDistance, scientificName) %>%
+  na.omit()
+
+plot.df$predictions = predict(model)
+
+plot.df %>% ggplot() +
+  geom_line(aes(x = stemDiameter, y = predictions, color = scientificName)) +
+  geom_point(aes(x = stemDiameter, y = predictions, color = scientificName))
+```
+
+## Question 7
+Answer the following questions.
+
+**What do you think about your simile linear model? What are its limitations?**
+
+My simple linear model is pretty poor, which a vary low R2. Linear models have a lot of limitations, including the assumption of normally distributed residuals, the assumption of a linear relationship between your response and predictor(s), and the assumption of homoscedasticty. Also you just can't characterize complicated relationships with a simple linear model in general.
+
+**How many unique species are present at WREF?**
+```{r}
+length(unique(veg$scientificName))
+```
+
+There are 25 unique species at the WREF site.
+
+**What are the top_5 trees based on height? Diameter?**
+```{r}
+# What are the top 5 trees based on height?
+vegHT = vegLiv %>% arrange(desc(measurementHeight)) %>%
+  select(individualID, measurementHeight)
+
+head(vegHT, n = 5)
+
+# what are the top 5 trees based on diameter?
+vegDM = vegLiv %>% arrange(desc(stemDiameter)) %>%
+  select(individualID, stemDiameter)
+
+head(vegDM, n = 5)
+```
+
+
+**What proportion of sampled trees are dead?**
+```{r}
+liveTrees = length(unique(vegLiv$individualID))
+allTrees = length(unique(veg$individualID))
+livePropor = liveTrees / allTrees
+deadTreesProportion = 1 - livePropor
+
+print("Proportion of sampled trees that are dead: ", deadTreesProportion)
+```
+
+
+
