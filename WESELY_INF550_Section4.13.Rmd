@@ -1,0 +1,42 @@
+---
+title: "INF 550 Section 4.13"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 4.13 Digital Repeat Photography Coding Lab
+
+## 4.13.1 Quantifying haze and redness to evaluate California wildfires
+
+### Question 1
+**Pull mid-day imagery for September 1-7th, 2019 and 2020 for the canopy-level camera NEON.D17.SOAP.DP1.00033. Create a 2-panel plot showing those images in 2019 (left) and 2020 (right).**
+
+```{r}
+
+```
+
+
+### Question 2
+**Use the hazeR package to quantify the haze in each of those images. Print a summary of your results.**
+
+### Question 3
+**Generate a density function RGB plot for your haziest image in 2020, and one for the same date in 2019. Create a 2-panel plot showing 2019 on the left and 2020 on the right.**
+
+### Question 4
+**Pull timesseries data via the phenocamapi package. Calculate the difference in the rcc90 between 2019 and 2020 over the same time period as your images.**
+
+### Question 5
+**Create a summary plot showing haze as a bar and the differenece in rcc90 from question 4 as a timersies.**
+
+### Question 6
+**Answer the following questions:**
+
+**Does the hazeR package pick up smokey images?**
+
+**If you were to use color coordinates, which color band would be most useful to highlight smoke and why?**
+

@@ -1,0 +1,342 @@
+---
+title: "INF 550 Section 3.7"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(rnpn)
+library(ggplot2)
+library(neonUtilities)
+library(dplyr)
+library(lubridate)
+load("neon_token_source.Rdata")
+library(mgcv)
+library(rnpn)
+library(plotly)
+```
+
+# 3.7 USA-NPN Coding Lab
+
+## #1
+*For the purposes of this exercise we will be focusing on two NEON sites: HARV and CPER. Save these two sites into your workplace so that you can feed them into functions and packages.*
+
+```{r}
+sitesOfInterest <- c("HARV", "CPER")
+```
+
+## #2
+*Define AGGD and write the equation using LaTeX. What is an appropriate time interval over which we should calculate AGGD?*
+
+AGGD is the Accumulated Growing Degree Day, which uses the "accumulated" temperature in an ecosystem to predict phenological change.
+
+$GDD = ((T_{max} + T_{min})/2) - T_{base}$
+
+An appropriate time interval over which we should calculate AGGD could be the growing season, which varies based on location. 
+
+## #3
+*Use the neonUtilities package to pull plant phenology observations (DP1.10055.001). We will work with the statusintensity data*
+
+```{r, cache=T}
+#TOS Phenology Data
+
+dpid <- as.character('DP1.10055.001') #phe data
+ 
+pheDat <- loadByProduct(dpID="DP1.10055.001",
+                     site = sitesOfInterest,
+                     package = "basic",
+                     check.size = FALSE, 
+                     token=NEON_TOKEN)
+
+#NEON sends the data as a nested list, so I need to undo that
+# unlist all data frames
+list2env(pheDat ,.GlobalEnv)
+summary(phe_perindividualperyear)
+summary(phe_statusintensity)
+
+#remove duplicate records
+phe_statusintensity <- select(phe_statusintensity, -uid)
+phe_statusintensity <- distinct(phe_statusintensity)
+
+#Format dates
+phe_statusintensity$date <- as.Date(phe_statusintensity$date, "%Y-%m-%d")
+phe_statusintensity$editedDate <- as.Date(phe_statusintensity$editedDate, "%Y-%m-%d")
+phe_statusintensity$year <- as.numeric(substr(phe_statusintensity$date, 1, 4))
+phe_statusintensity$month <- as.numeric(format(phe_statusintensity$date, format="%m"))
+
+df = phe_statusintensity %>%
+  left_join(phe_perindividual, by = "individualID") %>%
+  filter(phenophaseName == "Colored leaves",
+         taxonID == "QURU",
+         phenophaseStatus == "yes") %>%
+  select(date.x, year, month, dayOfYear, siteID.x, individualID, phenophaseIntensity) %>%
+  na.omit()
+
+```
+
+Yes, there are ways to extract numerical values for string data that could be used for plotting. For example, you could count how many observations there are for each string type and make some kind of density visual. You could also subset the string to grab the numberical values and then convert those to numerical objects and use them for plotting directly.
+
+## #4
+*Using dpid DP1.00002.001 Single Aspirated Air Temperature calculate AGGD based on NEON tower data over the time period you decided upon in question 1. To save you time and frustration I’ve placed some mostly complete example code for one height on the tower just for Harvard. You will need to determine which height you think it best and complete these calculations for both sites. You will also need to consider things like filtering your temperature data for quality flags, and converting from GMT (Greenwich Mean Time) to your location’s time:*
+
+```{r, cache=T}
+dpid <- as.character('DP1.00002.001')  ##single aspirated air temperature
+
+tempDat <- loadByProduct(dpID=dpid,
+                        site = sitesOfInterest, 
+                        startdate = "2017-01",
+                        enddate="2017-12",
+                        avg=30,
+                        package = "basic",
+                        check.size = FALSE)
+
+SAAT <- tempDat$SAAT_30min
+
+# GDD typically reported in F
+# convert df temps
+SAAT$meanTempF=SAAT$tempSingleMean*1.8+32
+SAAT$endDateTime = with_tz(SAAT$endDateTime, tzone = "America/New_York")
+
+
+#pull date value from dateTime
+SAAT$date <- substr(SAAT$endDateTime, 1, 10)
+
+select(tempDat$sensor_positions_00002, c(HOR.VER, zOffset))
+head(tempDat$sensor_positions_00002)
+
+day_temp <- SAAT%>%
+  filter(verticalPosition=="030",
+         finalQF == 0)%>%
+  group_by(siteID, date)%>%
+  mutate(dayMaxTemp=max(meanTempF), dayMinTemp=min(meanTempF),
+         dayMeanTemp=mean(meanTempF))%>%
+  select(siteID, date, dayMaxTemp, dayMinTemp, dayMeanTemp)%>%
+  distinct()
+
+##alternative, simplified mean, consistent with many GDD calculations 
+### does accumulation differ for true mean vs. simplified mean?
+day_temp$mean2 <- (day_temp$dayMinTemp + day_temp$dayMaxTemp)/2
+
+day_temp$GDD1 <- ifelse(day_temp$dayMeanTemp-50 < 0, 0, round(day_temp$dayMeanTemp-50, 0))
+day_temp$GDD2 <- ifelse(day_temp$mean2-50 < 0, 0, round(day_temp$mean2-50, 0))
+day_temp$GDD3 <- ifelse(day_temp$dayMeanTemp-50 < 0, 0, round(day_temp$mean2-50, 0))
+
+# define year
+day_temp$year <- substr(day_temp$date, 1, 4)
+
+#function to add daily GDD values
+sumr.2 <- function(x) {
+	sapply(1:length(x), function(i) sum(x[1:i]))
+}
+
+#calculate Accumlated GDD
+day_temp$AGDD3 <- sumr.2(x=day_temp$GDD3)
+day_temp$AGDD2 <- sumr.2(x=day_temp$GDD2)
+day_temp$AGDD1 <- sumr.2(x=day_temp$GDD1)
+day_temp <- ungroup(day_temp)
+
+library(plotly)
+
+
+HARV.df = day_temp %>%
+  filter(siteID == "HARV") %>%
+  select(date, AGDD1, AGDD2, AGDD3)
+
+CPER.df = day_temp %>%
+  filter(siteID == "CPER") %>%
+  select(date, AGDD1, AGDD2, AGDD3)
+
+p1 = plot_ly() %>%
+    add_trace(
+      x= ~HARV.df$date,
+      y = ~ HARV.df$AGDD1,
+      type= 'scatter',
+      mode = "lines",
+      line = list(width = 1, color = "rgb(120,120,120)"),
+      name = "Calculated Mean Temp",
+      showlegend = TRUE, 
+      opacity=.5
+    )%>%
+  add_trace(
+      data = HARV.df,
+    x = ~ date,
+    y = ~ AGDD2,
+    name= 'Simplified Mean Temp',
+    showlegend = TRUE,
+    type = 'scatter',
+    mode = 'lines',
+    line = list(width = 1),
+    opacity=.5)%>%
+  add_trace(
+      data = HARV.df,
+    x = ~ date,
+    y = ~ AGDD3,
+    name= 'Filtered Using Both',
+    showlegend = TRUE,
+    type = 'scatter',
+    mode = 'lines',
+    line = list(width = 1),
+    opacity=.2)
+
+tmpFile <- tempfile(fileext = ".png")
+export(p1, file = tmpFile)
+```
+
+```{r}
+p2 = plot_ly() %>%
+    add_trace(
+      x= ~CPER.df$date,
+      y = ~ CPER.df$AGDD1,
+      type= 'scatter',
+      mode = "lines",
+      line = list(width = 1, color = "rgb(120,120,120)"),
+      name = "Calculated Mean Temp",
+      showlegend = TRUE,
+      opacity=.5
+    )%>%
+  add_trace(
+      data = CPER.df,
+    x = ~ date,
+    y = ~ AGDD2,
+    name= 'Simplified Mean Temp',
+    showlegend = TRUE,
+    type = 'scatter',
+    mode = 'lines',
+    line = list(width = 1),
+    opacity=.5)%>%
+  add_trace(
+      data = CPER.df,
+    x = ~ date,
+    y = ~ AGDD3,
+    name= 'Filtered Using Both',
+    showlegend = TRUE,
+    type = 'scatter',
+    mode = 'lines',
+    line = list(width = 1),
+    opacity=.2)
+
+tmpFile <- tempfile(fileext = ".png")
+export(p1, file = tmpFile)
+```
+
+
+## #5
+*Plot your calculated AGGD and comment on your calculations. Do you need to revise your time horizon or sensor height?*
+
+After doing the calculations and looking at my plots the first time, I went back and changed my sensor height. I realized after plotting that the sensor height I had picked was not available at the CPRE site. Because the taxon I picked is an oak, I wanted to use the highest sensor. But I had to picked the highest sensor height that was present at both sites.
+
+## #6
+*Now we’re going to build a model to see how AGGD impacts phenological status. But Wait. Is phenology all driven by temperature? Should you consider any other variables? What about AGGD and just plain temperature? Also, we have one very temperate site, and another that is a semi-arid grassland. Should water availability of any sort be considered? Any other variables or data?*
+
+Yes, it has been widely documented that phenological change is driven by more than just growing degree days. It's well researched that temperature, solar radiation (photo period), and water availability all strongly impact phenology in addition to AGGD.
+
+
+*Create a GAM (Generalized Additive Model) for your phenological data including any variables you think might be relevant.*
+
+```{r}
+# set up the data
+day_temp = day_temp %>%
+  mutate(
+    date = ymd(date)
+  )
+
+gam.df = df %>%
+  mutate(
+    phenoInstNumb = case_when(
+      phenophaseIntensity == "< 5%" ~ 5,
+      phenophaseIntensity == "5-24%" ~ 15,
+      phenophaseIntensity == "25-49%" ~ 37,
+      phenophaseIntensity == "50-74%" ~ 62,
+      phenophaseIntensity == "75-94%" ~ 85,
+      phenophaseIntensity == ">= 95%" ~ 95,
+    )
+  ) %>%
+  rename(date = date.x, siteID = siteID.x) %>%
+  left_join(day_temp, by = c("date", 'siteID')) %>%
+  filter(siteID == "HARV") %>%
+  # get rid of any dates outside of 2017
+  filter(year(date) == 2017)
+
+
+library(mgcv)
+model <- mgcv::gam(phenoInstNumb ~ AGDD3 + s(dayMeanTemp) + s(dayOfYear),
+                   data = gam.df)
+mgcv::summary.gam(model) 
+mgcv::plot.gam(model, pages=1 )
+
+```
+
+I tried a several different GAMs with a variety variables and decided this was the best model.
+
+## # 7-8
+*7. Now that we have a model for NEON data, let’s use the rnpn package to see how adding additional data could improve our fit. Use the taxonID that you selected at each NEON tower, and feed that to the rnpn package to grab observational data and increase your number of observations.*
+
+*8. Pull AGGD from USA-NPN based on the observations you just pulled.*
+
+```{r, cache=T}
+
+npn.df = npn_download_status_data(
+  request_source = 'NAU',
+  years = c('2017'),
+  states = c("MA"),
+  agdd_layer = 50,
+  # get only observations for Quercus rubra
+  species_ids = 102
+)
+
+npn.df = npn.df %>%
+  filter(phenophase_description == "Colored leaves",
+         intensity_value != -9999) %>%
+  select(day_of_year, observation_date,
+         update_datetime, intensity_value,
+         genus, species, site_id, `gdd:agdd_50f`) %>%
+  mutate(
+    phenoInstNumb = case_when(
+      intensity_value == "Less than 5%" ~ 5,
+      intensity_value == "5-24%" ~ 15,
+      intensity_value == "25-49%" ~ 37,
+      intensity_value == "50-74%" ~ 62,
+      intensity_value == "75-94%" ~ 85,
+      intensity_value == "95% or more" ~ 95,
+    )
+  ) %>%
+  rename(date = observation_date,
+         dayOfYear = day_of_year,
+         AGDD3 = `gdd:agdd_50f`)
+
+
+
+
+  
+```
+
+
+## #9
+*Combine your NEON and USA-NPN data into the same data.frame and re-fit your GAM.*
+
+*Summarize your new model*
+
+*Plot your new model*
+
+```{r}
+# add the NPN data to the GAM dataframe
+subgam1 = gam.df %>%
+  # grab only the vars we need
+  select(date, phenoInstNumb, AGDD3, dayOfYear)
+subgam2 = npn.df %>%
+  select(date, phenoInstNumb, AGDD3, dayOfYear)
+subgam3 = rbind(subgam1, subgam2)
+newgam.df = left_join(subgam3, day_temp, by = "date")
+
+model <- mgcv::gam(phenoInstNumb ~ AGDD3.x + s(dayMeanTemp) + s(dayOfYear),
+                   data = newgam.df)
+mgcv::summary.gam(model) 
+mgcv::plot.gam(model, pages=1 )
+```
+
+*Comment on your new model: was it improved? If so how?*
+
+Yes, my model did improve some. My R2 has increased and my residuals are smaller. 

@@ -1,0 +1,180 @@
+---
+title: "INF 550 Section 2.15 - NEON Coding Lab Part 2"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, warning=F, error=F}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggplot2)
+library(neonUtilities)
+library(geoNEON)
+# library(sp)
+library(httr)
+library(jsonlite)
+# library(dplyr, quietly=T)
+library(downloader)
+library(BiocManager)
+# library(rhdf5)
+
+load("neon_token_source.Rdata")
+
+```
+
+
+# 2.15 NEON Coding Lab Part 2
+
+## Question 1
+**Use the answers that you’ve provided above to select a single NEON site.**
+
+JORN
+
+## Question 2
+**Use the answers that you’ve provided above to select 3 NEON data products from either the TOS, TIS or ARS (AOP) collection methods. Summarize each product with its NEON identifier, along with a summary.**
+
+1) Precipitation DP1.00006.001
+
+The precipitation data product measures precipitation through time. It breaks out the precipitation measurements into three kinds of observations: primary precip is measured using a weighing gauge, secondary precip is measured using a tipping bucket at the very top of the tower, and ground level precip is measured using a tipping bucket as well but at the ground level.
+
+2) H2O Concentration - DP1.00035
+
+This data product measures the water concentration in the air around the top of the NEON tower. This is important for estimating water vapor exchange and ET (evapotranspiration).
+
+3) CO2 Concentration - DP1.00034
+
+The CO2 concentration data product observes the concentration of CO2 in the air around the top of the NEON tower. This is important for estimating carbon exchange between the atmosphere and ecosystem.
+
+## Question 3
+**Using the NEON Ulitites package or the API pull in those data along with metadata.**
+
+```{r, cache=T}
+sitesOfInterest <- c("JORN")
+
+# precip data data product ID
+dpid1 <- as.character('DP1.00006.001')
+
+# download the precip data
+precipDat <- loadByProduct(dpID=dpid1,
+                     site = sitesOfInterest,
+                     package = "basic",
+                     check.size = FALSE, 
+                     token=NEON_TOKEN)
+
+# save(precipDat, file = "precipDat.Rdata")
+load("precipDat.Rdata")
+
+# eddy covar data product ID
+dpid2 = as.character("DP4.00200.001")
+
+# Download eddy covariance data 
+zipsByProduct(dpID=dpid2,
+              site = sitesOfInterest,
+              startdate = "2021-06",
+              enddate = "2021-08",
+              package = "basic",
+              check.size = FALSE,
+              savepath = "./",
+              token=NEON_TOKEN)
+flux <- stackEddy(filepath = "./filesToStack00200",
+                   level = "dp04")
+
+# save(flux, file = "flux.Rdata")
+load("flux.Rdata")
+```
+
+## Question 4
+**Organize your data into data.frames and produce summaries for each of your data:**
+```{r, warning=F, error=F}
+# unlist all data frames
+list2env(precipDat ,.GlobalEnv)
+# summary of precip data (30 min)
+str(THRPRE_30min)
+
+# unlist all data frames
+list2env(flux ,.GlobalEnv)
+# summary of eddy covar data
+str(JORN)
+```
+
+## Question 5
+**Filter and format your data based on metadata and quality flags:**
+```{r}
+
+precip.df = THRPRE_30min %>%
+  select(endDateTime, TFPrecipBulk) %>%
+  # get rid of duplicate rows
+  distinct() %>%
+  # get rid of any rows that have an NA
+  na.omit() 
+  
+#flux H2O turbulent data
+H2Oconc.df = JORN %>%
+  select(timeEnd, data.fluxH2o.turb.flux) %>%
+  # get rid of duplicate rows
+  distinct() %>%
+  # get rid of any rows that have an NA
+  na.omit()
+
+CO2conc.df = JORN %>%
+  select(timeEnd, data.fluxCo2.turb.flux) %>%
+  # get rid of duplicate rows
+  distinct() %>%
+  # get rid of any rows that have an NA
+  na.omit()
+
+save(precip.df, H2Oconc.df, CO2conc.df, file = "Sec2.15.data.Rdata")
+
+# luckily for me, the date columns in all of these dataframes are correctly reading as date objects.
+```
+
+## Question 6
+**Create minimum of 1 plot per data type (minimum of 3 plots total). These will vary based on that data that you’ve chosen.**
+
+```{r}
+# precip timeseries
+precip.df %>% ggplot() +
+  geom_line(aes(x = endDateTime, y = TFPrecipBulk), color = "blue") +
+  labs(title = "JORN Precipitation Timeseries", x = "Time", y = "Precipitation") +
+  theme(plot.title = element_text(hjust = .5))
+```
+
+```{r}
+# H2O concentration timeseries
+H2Oconc.df %>% ggplot() +
+  geom_line(aes(x = timeEnd, y = data.fluxH2o.turb.flux), color = "lightblue") +
+  labs(title = "JORN H2O Concentration Timeseries", x = "Time (2021)", y = "H2O concentration") +
+  theme(plot.title = element_text(hjust = .5))
+```
+
+```{r}
+# C2O concentration timeseries
+CO2conc.df %>% ggplot() +
+  geom_line(aes(x = timeEnd, y = data.fluxCo2.turb.flux), color = "forestgreen") +
+  labs(title = "JORN C2O Concentration Timeseries", x = "Time (2021)", y = "C2O concentration") +
+  theme(plot.title = element_text(hjust = .5))
+```
+
+## Question 7
+**What is the temporal frequency of observations in the data you decided was of interest?**
+The precipitation data is 30 minute data. The H2O concentration data that I am using in the graph above is about daily (however this is an aggregated version of the data). The CO2 concentration data I am using above is about daily as well. 
+
+**How do the data align to answer a central question?**
+
+These data align to inform me about what ecological processes were happening to what magnitude through out the last few year. This will help me inform my process-based model of the major ecosystem processes over the course of annual cycles.
+
+**What challenges did you run into when investigating these data?** 
+
+There is just a lot of information that gets downloaded along with the actual data itself. I found this overwhelming and a lot to wade through to get to the actual data. I also struggled to get the eddy co-variance data to download since it's a bundled data product (aka it's a huge file). But constraining the date range (instead of downloading all data ever) helped alleviate this problem.
+Another challenge is gaps in the data, which can easily disrupt an analysis.
+
+**How will you address these challenges and document your code? One to two paragraphs**
+
+To address the issue of overwhelming metadata, I will simply have to spend time going over each of the included metadata files. As I download and go over more NEON products, I'm sure the documentations will become more logical to me and I will be more easily able to find the information I want. To document this in my code, it would be a good idea to write out comments in my code about what each of the variables/acronyms/etc mean and where in the metadata I found that information in case I (or someone else) want to know where my information came from later on.
+
+To address the issue of downloading huge files, I could either break up the download into multiple chunks (perhaps my time intervals) or try to download all the data all at once on a more powerful computer than my laptop. I could even use a super computer (like Monsoon) to download all the data at once for me. Whether in the future I choose to download the data in chunks or download the data all at once on a super computer, I will make clear comments in my code about why I am doing what and how I am accomplishing the overall data download needed to replicate my work.
+
+
+

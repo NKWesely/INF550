@@ -1,0 +1,92 @@
+---
+title: "INF 550 Section 2.14 - Intro to NEON Exercises Part 2"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 2.14.1 Written
+## Question 1
+**How does NEON address ‘dark data’ (Chapter 1)?**
+
+Dark data is data that gets collected but stored in repositories somewhere that never gets shared or published. Sometimes its data that can't be released. NEON is trying to completely get rid of dark data by publishing all their data. 
+
+## Question 2
+**How might or does the NEON project intersect with your current research or future career goals? (1 paragraph)**
+
+My future research aims to forecast the state of the carbon and water cycles under future climate regimes in four different dryland ecosystems in Sevilleta, New Mexico. This intersects with many of NEON's projects. NEON is measuring many things related to the water and carbon cycle and they have a site in the Sevilleta Wildlife Refuge in New Mexico. 
+
+## Question 3
+*Use the map in Chapter 2:Intro to NEON to answer the following questions. Consider the research question that you may explore as your final semester project or a current project that you are working on and answer each of the following questions:*
+
+**Are there NEON field sites that are in study regions of interest to you?**
+
+Yes! JORN, in the Sevilleta Wildlife Refuge in New Mexico
+
+
+**What domains are the sites located in?**
+
+JORN is in D14 - Desert Southwest
+
+
+**What NEON field sites do your current research or Capstone Project ideas coincide with?**
+
+Yes! JORN, in the Sevilleta Wildlife Refuge in New Mexico
+
+
+**Is the site or sites core or relocatable?**
+
+JORN is a core site.
+
+
+**Are they terrestrial or aquatic?**
+
+JORN is terrestrial.
+
+
+**Are there data available for the NEON field site(s) that you are most interested in? What kind of data are available?**
+
+Yes! Most of the metrics related to the carbon cycle and water cycle would be useful for my process-based modeling of the major ecological processes in my ecosystems of interest.
+
+
+## Question 4
+*Consider either your current or future research, or a question you’d like to address during this course and answer each of the following questions:*
+
+**Which types of NEON data may be more useful to address these questions?**
+
+Of the three main types of NEON data, probably the instrumentation data would be most useful for my current research. Specifically, the flux tower data with estimates for ET and NEE would be particularly useful for constraining parameters in my process-based models of the major ecological processes.
+
+**What non-NEON data resources could be combined with NEON data to help address your question?**
+
+It would be awesome to combine the NEON data from their Sevilleta site (JORN) with the Long Term Ecological Research (LTER) sites in the same area. This would give me a richer dataset with more data coverage of different ecosystem types within Sevilleta Wildlife Refuge.
+
+**What challenges, if any, could you foresee when beginning to work with these data?**
+
+The most obvious challenge that I foresee when incorporating NEON data into my process-based model is data gaps. When optimizing parameters with simulated annealing, you cannot have any missing data. Missing data messes up the algorithms. So I would need to infill any data gaps before hand, which requires careful selection of a gap-filling method.
+
+## Question 5
+*Use the Data Portal tools to investigate the data availability for the field sites you’ve already identified in the previous sections and answer each of the following questions:*
+
+**What types of aquatic or terrestrial data are currently available? Remote sensing data?**
+
+At JORN, there are lots of different kinds of terrestrial data, however there is no aquatic data. For example, there is eddy covariance data, barometric pressure, many types of wind speed, breeding landbird point counts, etc. There are some remotely sensed data products as well, such as canopy water indices.
+
+**Of these, what type of data are you most interested in working with for your project during this course?**
+
+I am most interested in working with the terrestrial, instrumentation data products, such as the eddy co-variance data.
+
+**For what time period does the data cover?**
+
+The eddy co-variance data at JORN is consistently available from the end of 2017 until today.
+
+**What format is the downloadable file available in?**
+
+You can download the bundled eddy co-variance data as a RIS file or as a BIBTEX file.
+
+**Where is the metadata to support this data?**
+
+Some of the metadata is on the data product / site page on the NEON website. There are a lot of pdf's you can download under the "Documentation" headings on the product/site page on the website. There is also a "Quick Start Guide" for the product/site that you can easily download. Finally, when you download the data product itself, you download quite a bit of metadata with it (as least when you download the data using a API).
