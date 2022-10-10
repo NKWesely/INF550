@@ -14,12 +14,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Question 1
 **What do you see as the value of the images themselves? The 1 or 3-day products, the transition dates? How could they be used for different applications?**
 
-I see the value of these images as chronicalling the changes of an ecosystem through time. The 30ish minute repeat photography is oversampling the region of interest. This kind of raw, noisy data could be useful for people who want to define their own region of interest within a photo. The 1 or 3 day cleaned data products are very nice for quick and easy use. This would be useful for people who are more interested in tracking the through time changes in greenness. The transition dates are also incredibly useful for people trying to track how climate change is affect phenological shifts. 
+I see the value of these images as chronicalling the changes of an ecosystem through time. The 30ish minute repeat photography is oversampling the region of interest. This kind of raw, noisy data could be useful for people who want to define their own region of interest within a photo. The 1 or 3 day cleaned data products are very nice for quick and easy use. This would be useful for people who are more interested in tracking the through time changes in greenness. The transition dates are also incredibly useful for people trying to track how climate change is affecting phenological shifts. 
 
 ## Question 2
 **Why does PhenoCam take photos every 15-30 minutes, but summarize to 1 or 3-day products?**
 
-The 15-30 minute data is just a lot of data. There is also a lot of noise in the 15-30 minute data. Often the cameras come on and start taking photos when it's still somewhat dark outside, and they don't stop taking photos until after dark. The cleaner 1 or 3 day products take all the 15-30 minute data and remove a lot of images to get rid of noise and then average the the greenness. That way if there is any randomly high greenness in a photo, that photo isn't giving a false representation of the area. 
+The 15-30 minute data is just a lot of data. There is also a lot of noise in the 15-30 minute data. Often the cameras come on and start taking photos when it's still somewhat dark outside, and they don't stop taking photos until after sunset. The cleaner 1 or 3 day products take all the 15-30 minute data and remove a lot of images to get rid of noise and then average the the greenness. That way if there is one photo with randomly high greenness in a photo, that photo isn't giving a false representation of the area. 
 
 ## Question 3
 **Why does canopy color coordinate with photosynthesis in many ecosystems? Name an example of a situation where it wouldn’t and explain why.**
@@ -27,6 +27,7 @@ The 15-30 minute data is just a lot of data. There is also a lot of noise in the
 Canopy color coordinates with photosynthesis in many ecosystems because most plants in most ecosystems are green (because they have chlorophyll). So you can make inferences about how much photosynthesis is going on (or how active the plant is, or how much the plant is growing) based on changes in the canopy colors.
 
 Examples of situations where it wouldn't work to look at greeness: 
+
 Some plants don't have green leaves, so measuring the GCC isn't going to tell you anything about how much that type of plant is growing. Lots of plants also change colors in the fall, so if you are wanting to know about how much plants are photosynthesizing in the fall, you need to look at something else besides greenness in the repeated photos.
 Or if you are in a really foggy area, a lot (or all) of your photos are going to be too clouded to make any inferences about changing canopy color.
 
@@ -34,12 +35,12 @@ Or if you are in a really foggy area, a lot (or all) of your photos are going to
 ## Question 4
 **Why are there sometimes multiple Regions of Interest (ROIs) for a PhenoCam?**
 
-Because sometimes you are interested in more than one functional type of plant in the same photo. So you can make a ROI around some grass in a photo and analyze how the grass is changing, then you can mkae an ROI around some shrubs in the same photo and analysze the pixels associated with the shrubs.
+Because sometimes you are interested in more than one functional type of plant in the same photo. So you can make a ROI around some grass in a photo and analyze how the grass is changing, then you can make an ROI around some shrubs in the same photo and analyze the pixels associated with the shrubs.
 
 ## Question 5
 **How might or does the PhenoCam project intersect with your current research or future career goals? (1 paragraph)**
 
-I am trying to constrain a process-based model representing the major carbon and water cycle components in four different ecosystem types in the Sevilleta Wildlife Refugre area: a desert grassland, a plains grassland, a desert shrubland, and a juniper savanna.
+I am trying to constrain a process-based model representing the major carbon and water cycle components in four different ecosystem types in the Sevilleta Wildlife Refuge area: a desert grassland, a plains grassland, a desert shrubland, and a juniper savanna.
 
 I would like to incorporate phenocam data to help constrain some of the carbon pool parameters in my process-based model. Incorporating phenocam data could allow us to estimate phenolgical shifts, such as green-up and brown-down, which have major implications for the amount of photosynthesis going on and therefore the amount of carbon being sequestered. Once carbon “enters” the process-based model, it moves through the different plant issue and ultimately decomposes in the soil.
 I want to take phenocam data about spring and fall phenological shifts on plants that match our four ecosystem types of interest from the same around as the Sevilleta Wildlife Refuge, curate the data, and feed in into the model-data fusion algorithms I am using to constrain the parameters in our process-based model.
@@ -63,7 +64,7 @@ There are a lot! Here are a few
 
 **Are they connected to other networks (e.g. LTAR, NEON, Fluxnet)?**
 
-Yes, LTER and NEON
+Yes, LTER and NEON.
 
 **What is the data record length for the sites you’re interested in?**
 

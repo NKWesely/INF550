@@ -1,0 +1,59 @@
+---
+title: "INF 550 Section 4.14"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 4.14 PhenoCam Culmination Activity
+**Write up a 1-page summary of a project that you might want to explore using PhenoCam data over the duration of this course. Include the types of PhenoCam (and other data) that you will need to implement this project. Save this summary as you will be refining and adding to your ideas over the course of the semester.**
+
+For my PhD research, I am trying to constrain a process-based model representing the major ecological processes in four different ecosystem types in the Sevilleta Wildlife Refuge area: a desert grassland, a plains grassland, a desert shrubland, and a juniper savanna. In these four different ecosystem types, LTER experiments have been going on for several years. There are drought experiments (i.e., reducing the total amount of precipitation entering the ecosystem), precipitation variability experiments (i.e., increasing the sporadicity of precipitation entering the ecosystem), and combination experiments with both drought and precipitation variability treatments. These drought and precipitation variability treatments reflect what climatologists anticipate in our future under the new climate regime.
+
+I am planning to use the dryland version of TECO (Hou et al. 2021) as my foundational process-based model, which I will modify to (a) reflect the vegetation structure for each ecosystem type and (b) integrate more data streams.
+
+Once we have successfully constrained the model using data, we can project into the future to make useful inferences about how these four different ecosystem types will be impacted by different potential climate regimes (e.g., more drought and more sporadic precipitation).
+
+A project that I might want to explore using PhenoCam data would be incorporate phenocam data to help constrain some of the carbon pool parameters in my process-based model. Incorporating phenocam data could allow us to estimate phenolgical shifts, such as green-up and brown-down, which have major implications for the amount of photosynthesis going on and therefore the amount of carbon being sequestered. Once carbon “enters” the process-based model, it moves through the different plant issue and ultimately decomposes in the soil.
+
+I want to take phenocam data about spring and fall phenological shifts on plants that match our four ecosystem types of interest from the same around as the Sevilleta Wildlife Refuge, curate the data, and feed in into the model-data fusion algorithms I am using to constrain the parameters in our process-based model.
+
+I would want to use all the phenocam data available in the Sevilleta Wildlife Refuge. Different cameras have different record lengths, but luckily this temporal inconsistency is not an issue for data assimilation and model-data fusion. Bayesian Monte-Carlo Markov Chain methods can handle temporal inconsistency and data gaps also, which is a major advantage of using these kinds of methods. There are also different numbers of cameras for each of the four ecosystem types of interest for me. I will have to essentially make four different process based models and calibrate the carbon pools in each of the four models using different cameras. Below is a list of the different cameras (i.e., phenocam data) available for each of my four ecosystem types of interest.
+
+Desert grassland (black gramma)
+
+- sevilletagrass
+- sevilletanewgrass
+- sevMRME10L
+- sevMRME11C
+- sevMRME1S
+
+Plains grassland (blue gramma)
+
+- sevmveblue1ambinc
+- sevmveblue10ambinc
+- sevmveblue11ambinc
+- sevmveblue12ambamb
+- sevmveblue13ambamb
+- sevmveblue14ambinc
+- sevmveblue15ambinc
+- sevmveblue15redamb
+- sevmveblue17redinc
+- sevmveblue18redinc
+
+
+Desert shrubland (creosote bush)
+
+- sevilletashrub
+
+Juniper savana
+
+- sevpjrm12
+- sevpjrm13
+- sevpjrm15
+- sevpjrm16
+- sevpjrm17
