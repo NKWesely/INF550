@@ -213,6 +213,133 @@ names(dataList) <- paste0(lubridate::year(setDate),sprintf("%02d",lubridate::mon
 
 # Remove NULL elements from list
 dataList <- dataList[vapply(dataList, Negate(is.null), NA)]
+
+# Determine tower horizontal & vertical indices
+
+#Find the tower top level by looking at the vertical index of the turbulent CO2 concentration measurements 
+LvlTowr <- grep(pattern = "_30m", names(dataList[[1]]$dp01$data$co2Turb), value = TRUE)
+LvlTowr <- gsub(x = LvlTowr, pattern = "_30m", replacement = "")
+
+#get tower top level
+LvlTop <- strsplit(LvlTowr,"")
+LvlTop <- base::as.numeric(LvlTop[[1]][6])
+
+#Ameriflux vertical levels based off of https://ameriflux.lbl.gov/data/aboutdata/data-variables/ section 3.3.1 "Indices must be in order, starting with the highest."
+idxVerAmfx <- base::seq(from = 1, to = LvlTop, by = 1)
+#get the sequence from top to first level
+LvlMeas <- base::seq(from = LvlTop, to = 1, by = -1)
+#Recreate NEON naming conventions
+LvlMeas <- paste0("000_0",LvlMeas,"0",sep="")
+#Give NEON naming conventions to Ameriflux vertical levels
+names(idxVerAmfx) <- LvlMeas
+
+#Ameriflux horizontal index
+idxHorAmfx <- 1
+
+# Subset to the Ameriflux variables to convert
+dataListFlux <- lapply(names(dataList), function(x) {
+  data.frame(
+    "TIMESTAMP_START" = as.POSIXlt(dataList[[x]]$dp04$data$fluxCo2$turb$timeBgn, format="%Y-%m-%dT%H:%M:%OSZ", tz = "GMT"),
+    "TIMESTAMP_END" = as.POSIXlt(dataList[[x]]$dp04$data$fluxCo2$turb$timeEnd, format="%Y-%m-%dT%H:%M:%OSZ", tz = "GMT"),
+    # "TIMESTAMP_START" = strftime(as.POSIXlt(dataList[[x]][[idxSite]]$dp04$data$fluxCo2$turb$timeBgn, format="%Y-%m-%dT%H:%M:%OSZ"), format = "%Y%m%d%H%M"),
+    # "TIMESTAMP_END" = strftime(as.POSIXlt(dataList[[x]][[idxSite]]$dp04$data$fluxCo2$turb$timeEnd, format="%Y-%m-%dT%H:%M:%OSZ") + 60, format = "%Y%m%d%H%M"),
+    "FC"= dataList[[x]]$dp04$data$fluxCo2$turb$flux,
+    "SC"= dataList[[x]]$dp04$data$fluxCo2$stor$flux,
+    "NEE"= dataList[[x]]$dp04$data$fluxCo2$nsae$flux,
+    "LE" = dataList[[x]]$dp04$data$fluxH2o$turb$flux,
+    "SLE" = dataList[[x]]$dp04$data$fluxH2o$stor$flux,
+    "USTAR" = dataList[[x]]$dp04$data$fluxMome$turb$veloFric,
+    
+    "H" = dataList[[x]]$dp04$data$fluxTemp$turb$flux,
+    "SH" = dataList[[x]]$dp04$data$fluxTemp$stor$flux,
+    "FETCH_90" = dataList[[x]]$dp04$data$foot$stat$distXaxs90,
+    "FETCH_MAX" = dataList[[x]]$dp04$data$foot$stat$distXaxsMax,
+    "V_SIGMA" = dataList[[x]]$dp04$data$foot$stat$veloYaxsHorSd,
+    #"W_SIGMA" = dataList[[x]]$dp04$data$foot$stat$veloZaxsHorSd,
+    "CO2_1_1_1" = dataList[[x]]$dp01$data$co2Turb[[paste0(LvlTowr,"_30m")]]$rtioMoleDryCo2$mean,
+    "H2O_1_1_1" = dataList[[x]]$dp01$data$h2oTurb[[paste0(LvlTowr,"_30m")]]$rtioMoleDryH2o$mean,
+    "qfFinlH2oTurbFrt00Samp" = dataList[[x]]$dp01$qfqm$h2oTurb[[paste0(LvlTowr,"_30m")]]$frt00Samp$qfFinl,
+    "qfH2O_1_1_1" = dataList[[x]]$dp01$qfqm$h2oTurb[[paste0(LvlTowr,"_30m")]]$rtioMoleDryH2o$qfFinl,
+    "qfCO2_1_1_1" = dataList[[x]]$dp01$qfqm$co2Turb[[paste0(LvlTowr,"_30m")]]$rtioMoleDryCo2$qfFinl,
+    "qfSC" = dataList[[x]]$dp04$qfqm$fluxCo2$stor$qfFinl,
+    "qfSLE" = dataList[[x]]$dp04$qfqm$fluxH2o$stor$qfFinl,
+    "qfSH" = dataList[[x]]$dp04$qfqm$fluxTemp$stor$qfFinl,
+    "qfT_SONIC" = dataList[[x]]$dp01$qfqm$soni[[paste0(LvlTowr,"_30m")]]$tempSoni$qfFinl,
+    "qfWS_1_1_1" = dataList[[x]]$dp01$qfqm$soni[[paste0(LvlTowr,"_30m")]]$veloXaxsYaxsErth$qfFinl,
+    rbind.data.frame(lapply(names(idxVerAmfx), function(y) {
+      tryCatch({rlog$debug(y)}, error=function(cond){print(y)})
+      rpt <- list()
+      rpt[[paste0("CO2_1_",idxVerAmfx[y],"_2")]] <- dataList[[x]]$dp01$data$co2Stor[[paste0(y,"_30m")]]$rtioMoleDryCo2$mean
+      
+      
+      rpt[[paste0("H2O_1_",idxVerAmfx[y],"_2")]] <- dataList[[x]]$dp01$data$h2oStor[[paste0(y,"_30m")]]$rtioMoleDryH2o$mean
+      rpt[[paste0("CO2_1_",idxVerAmfx[y],"_3")]] <- dataList[[x]]$dp01$data$isoCo2[[paste0(y,"_30m")]]$rtioMoleDryCo2$mean
+      
+      rpt[[paste0("H2O_1_",idxVerAmfx[y],"_3")]] <- dataList[[x]]$dp01$data$isoCo2[[paste0(y,"_30m")]]$rtioMoleDryH2o$mean
+      rpt[[paste0("qfCO2_1_",idxVerAmfx[y],"_2")]] <- dataList[[x]]$dp01$qfqm$co2Stor[[paste0(LvlTowr,"_30m")]]$rtioMoleDryCo2$qfFinl
+      rpt[[paste0("qfH2O_1_",idxVerAmfx[y],"_2")]] <- dataList[[x]]$dp01$qfqm$h2oStor[[paste0(LvlTowr,"_30m")]]$rtioMoleDryH2o$qfFinl
+      rpt[[paste0("qfCO2_1_",idxVerAmfx[y],"_3")]] <- dataList[[x]]$dp01$qfqm$isoCo2[[paste0(LvlTowr,"_30m")]]$rtioMoleDryCo2$qfFinl
+      rpt[[paste0("qfH2O_1_",idxVerAmfx[y],"_3")]] <- dataList[[x]]$dp01$qfqm$isoH2o[[paste0(LvlTowr,"_30m")]]$rtioMoleDryH2o$qfFinl
+      
+      rpt <- rbind.data.frame(rpt)
+      return(rpt)
+    }
+    )),
+    
+    
+    "WS_1_1_1" = dataList[[x]]$dp01$data$soni[[paste0(LvlTowr,"_30m")]]$veloXaxsYaxsErth$mean,
+    "WS_MAX_1_1_1" = dataList[[x]]$dp01$data$soni[[paste0(LvlTowr,"_30m")]]$veloXaxsYaxsErth$max,
+    "WD_1_1_1" = dataList[[x]]$dp01$data$soni[[paste0(LvlTowr,"_30m")]]$angZaxsErth$mean,
+    "T_SONIC" = dataList[[x]]$dp01$data$soni[[paste0(LvlTowr,"_30m")]]$tempSoni$mean,
+    "T_SONIC_SIGMA" = base::sqrt(dataList[[x]]$dp01$data$soni[[paste0(LvlTowr,"_30m")]]$tempSoni$mean)
+    , stringsAsFactors = FALSE)
+})
+
+names(dataListFlux) <- names(dataList)
+
+# Combine the monthly data into a single dataframe, remove lists and clean memory
+dataDfFlux <- do.call(rbind.data.frame,dataListFlux)
+rm(list=c("dataListFlux","dataList"))
+gc()
+
+# Regularize timeseries to 30 minutes in case timestamps are missing from NEON files due to processing errors
+
+timeRglr <- eddy4R.base::def.rglr(timeMeas = as.POSIXlt(dataDfFlux$TIMESTAMP_START), dataMeas = dataDfFlux, BgnRglr = as.POSIXlt(dataDfFlux$TIMESTAMP_START[1]), EndRglr = as.POSIXlt(dataDfFlux$TIMESTAMP_END[length(dataDfFlux$TIMESTAMP_END)]), TzRglr = "UTC", FreqRglr = 1/(60*30))
+
+#Reassign data to data.frame
+dataDfFlux <- timeRglr$dataRglr
+#Format timestamps
+dataDfFlux$TIMESTAMP_START <- strftime(timeRglr$timeRglr + lubridate::hours(timeOfstUtc), format = "%Y%m%d%H%M")
+dataDfFlux$TIMESTAMP_END <- strftime(timeRglr$timeRglr + lubridate::hours(timeOfstUtc) + lubridate::minutes(30), format = "%Y%m%d%H%M")
+
+# Define validation times, and remove this data from the dataset. At NEON sites, validations with a series of gasses of known concentration are run every 23.5 hours. These values are used to correct for measurment drift and are run every 23.5 hours to achive daily resolution while also spreading the impact of lost measurements throughout the day.
+
+#Remove co2Turb and h2oTurb data based off of qfFlow (qfFinl frt00)
+dataDfFlux$FC[(which(dataDfFlux$qfCO2_1_1_1 == 1))] <- NaN
+dataDfFlux$LE[(which(dataDfFlux$qfH2O_1_1_1 == 1))] <- NaN
+dataDfFlux$USTAR[(which(dataDfFlux$qfWS_1_1_1 == 1))] <- NaN
+dataDfFlux$H[(which(dataDfFlux$qfT_SONIC_1_1_1 == 1))] <- NaN
+dataDfFlux$SC[(which(dataDfFlux$qfSC == 1))] <- NaN
+dataDfFlux$SLE[(which(dataDfFlux$qfSLE == 1))] <- NaN
+dataDfFlux$SH[(which(dataDfFlux$qfSH == 1))] <- NaN
+dataDfFlux$T_SONIC[(which(dataDfFlux$qfT_SONIC_1_1_1 == 1))] <- NaN
+dataDfFlux$T_SONIC_SIGMA[(which(dataDfFlux$qfT_SONIC_1_1_1 == 1))] <- NaN
+dataDfFlux$WS_1_1_1[(which(dataDfFlux$qfWS_1_1_1 == 1))] <- NaN
+dataDfFlux$WS_MAX_1_1_1[(which(dataDfFlux$qfWS_1_1_1 == 1))] <- NaN
+dataDfFlux$WD_1_1_1[(which(dataDfFlux$qfWS_1_1_1 == 1))] <- NaN
+
+dataDfFlux$H2O_1_1_1[(which(dataDfFlux$qfH2O_1_1_1 == 1))] <- NaN
+dataDfFlux$CO2_1_1_1[(which(dataDfFlux$qfCO2_1_1_1 == 1))] <- NaN
+
+lapply(idxVerAmfx, function(x){
+  #x <- 1
+  dataDfFlux[[paste0("H2O_1_",x,"_2")]][(which(dataDfFlux[[paste0("qfH2O_1_",x,"_2")]] == 1))] <<- NaN
+  dataDfFlux[[paste0("H2O_1_",x,"_3")]][(which(dataDfFlux[[paste0("qfH2O_1_",x,"_3")]] == 1))] <<- NaN
+  dataDfFlux[[paste0("CO2_1_",x,"_2")]][(which(dataDfFlux[[paste0("qfCO2_1_",x,"_2")]] == 1))] <<- NaN
+  dataDfFlux[[paste0("CO2_1_",x,"_3")]][(which(dataDfFlux[[paste0("qfCO2_1_",x,"_3")]] == 1))] <<- NaN
+})
+
+
 ```
 
 ```{r}

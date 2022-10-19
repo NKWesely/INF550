@@ -25,6 +25,29 @@ For example, while ruggedness at the pixel-scale (1m) may represent a boulder th
 
 ## An overarching high-quality figure to show how these data align
 
+```{r, include = F}
+
+library(raster)
+library(rgdal)
+library(tidyverse)
+library(reshape2)
+library(fields)
+
+sp = read.table("SP.txt")
+sp.crop = sp %>% filter(abs(V1)>=111.623 & abs(V1)<=111.639 & V2>=35.575 & V2<=35.59)
+sp.array = acast(sp.crop, V2 ~ V1)
+NEON_AOP_smallDEM = sp.array
+```
+
+Digital Elevation Model from NEON AOP Data
+
+```{r}
+# make a quick DEM of a crater close to Flagstaff from the NEON AOP elevation data
+fields::image.plot(NEON_AOP_smallDEM)
+```
+
+
+
 ## One paragraph summarizing how this data or analysis is useful to you and/or the infrastructure.
 
 A deeper understanding of how to quantify landscape ruggedness would be helpful information for many people studying diverse topics. I can foresee wildlife researchers using landscape ruggedness layers in habitat models and species distribution maps because wildlife interact with landforms in a more meaningful way than they do with a large pixel's aspect. I can also see landscape planners using a robust ruggedness spatial layer to help plan landscape preservation and manipulation. I think many forestry operations could also utilize a ruggedness spatial layer because it could help them plan thinning and mastication treatments better, rather than going to a sight and realizing the landscape is too rocky for heavy machinery to roll over. Overall, this data product could be really impactful to the larger ecological and environmental communities. 
