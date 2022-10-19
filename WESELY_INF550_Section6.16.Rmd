@@ -1,0 +1,31 @@
+---
+title: "INF 550 Section 6.16"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# NEON AOP Culmination Write Up
+**Write up a 1-page derived data product or research pipeline proposal summary of a project that you might want to explore using NEON AOP data. Include the types of NEON (and other data) that you would need to implement this project. Save this summary as you will be refining and adding to your ideas over the course of the semester.**
+
+A project that I might want to explore using NEON AOP data would be quantifying landscape ruggedness more robustly. Landscape ruggedness can be simplistically defined as how uneven or rocky the land is. I think this is an understudied component of landscape metrics. People usually use large scale topographic variables such as slope and aspect, which are remotely sensed at large pixels. This is an oversight because it oversimplifies the diversity of landforms found within a single pixel which create and provide unique microhabitats. These nuances in the landscape affect many ecological processes.
+
+For example, while ruggedness at the pixel-scale (1m) may represent a boulder that fire must navigate around, the rugged pixels aggregated to the hillslope-scale may reflect many boulders that create inconsistency in burnable fuels on a single plane. Similarly, rugged hillslopes aggregated to the watershed-scale could alter wind patterns that facilitate or inhibit fire spread, which would affect the single boulder’s potential to thwart fire at the pixel-scale.
+
+
+## Tables or bullet lists of specific data products
+1) Elevation - LiDAR DP3.30024.001
+2) LiDAR slant range waveform DP1.30001.001
+3) Slope and Aspect - LiDAR DP3.30025.001
+2) High-resolution orthorectified camera imagery DP1.30010.001
+
+## An overarching high-quality figure to show how these data align
+
+## One paragraph summarizing how this data or analysis is useful to you and/or the infrastructure.
+
+A deeper understanding of how to quantify landscape ruggedness would be helpful information for many people studying diverse topics. I can foresee wildlife researchers using landscape ruggedness layers in habitat models and species distribution maps because wildlife interact with landforms in a more meaningful way than they do with a large pixel's aspect. I can also see landscape planners using a robust ruggedness spatial layer to help plan landscape preservation and manipulation. I think many forestry operations could also utilize a ruggedness spatial layer because it could help them plan thinning and mastication treatments better, rather than going to a sight and realizing the landscape is too rocky for heavy machinery to roll over. Overall, this data product could be really impactful to the larger ecological and environmental communities. 
+
