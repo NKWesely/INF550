@@ -8,7 +8,6 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
-library(ggplot2)
 library(neonUtilities)
 # install.packages('BiocManager')
 library(BiocManager)
@@ -17,6 +16,8 @@ library(rhdf5)
 library(eddy4R.base)
 library(jsonlite)
 library(lubridate)
+library(dplyr)   
+library(amerifluxr)
 
 options(stringsAsFactors=F)
 
@@ -28,36 +29,6 @@ options(stringsAsFactors=F)
 ## Question 1
 **NEON data are submitted to AmeriFlux quarterly after one year of non-quality flagged or otherwise missing data are available. Use the workflow above to extend the data coverage of an already submitted NEON site by downloading existing data from the AmeriFlux website and recently published HDF5 files from the NEON data portal. Process the NEON data such that it is in AmeriFlux format and plot the entire timerseries.**
 
-```{r}
-
-# # download NEON data for JORN site
-# zipsByProduct(dpID="DP4.00200.001", 
-#               package="basic", 
-#               site="JORN", 
-#               startdate="2018-06", 
-#               enddate="2018-07",
-#               savepath="./data_5.7", 
-#               check.size=F)
-# 
-# # download recently published HDF5 filse from NEON data portal 
-# 
-# 
-# flux <- stackEddy(filepath="./data_5.7/filesToStack00200",
-#                   level="dp04")
-# 
-# # fix the dates
-# timeB <- as.POSIXct(flux$NIWO$timeBgn, 
-#                     format="%Y-%m-%dT%H:%M:%S", 
-#                     tz="GMT")
-# flux$NIWO <- cbind(timeB, flux$NIWO)
-# 
-# 
-# # download another data product 
-# pr <- loadByProduct("DP1.00024.001", site="NIWO", avg=30,
-#                     startdate="2018-06", enddate="2018-07",
-#                     package="basic", check.size=F)
-
-```
 
 ```{r, cache = T}
 # #Install most  recent version of ffbase from GitHub, this is a package dependency of eddy4R.base
@@ -401,35 +372,18 @@ dataDfFlux[is.na(dataDfFlux)] <- -9999
 #Create output filename based off of Ameriflux file naming convention
 nameFileOut <- base::paste0(DirOut,"/",siteNeon$SITE_ID,'_HH_',dataDfFlux$TIMESTAMP_START[1],'_',utils::tail(dataDfFlux$TIMESTAMP_END,n=1),'_flux.csv')
 
-#Write output to .csv
+# Write output to .csv
 write.csv(x = dataDfFlux, file = nameFileOut, row.names = FALSE)
 
 # Clean up environment
 rm(list="dataDfFlux")
 gc()
 
-# q1dat$timestamp = as.Date(q1dat$TIMESTAMP_START)
-# q1dat$timestamp = as.POSIXlt(q1dat$TIMESTAMP_START)
-# 
-# q1dat$group = as.numeric(str_sub(q1dat$TIMESTAMP_START, 1, 8))
-# 
-# as.POSIXlt(dataDfFlux$TIMESTAMP_START)
-# 
-# q1dat = dataDfFlux %>%
-#   mutate_all(~replace(., . == -9999, NA)) %>%
-#   mutate(group = as.numeric(str_sub(TIMESTAMP_START, 1, 7))) %>%
-#   dplyr::select(group, NEE) %>%
-#   group_by(group) %>%
-#   summarise(meanNEE = mean(NEE, na.rm  =T)) %>%
-#   filter(!is.nan(meanNEE))
-# 
-# 
-# 
-# ggplot()+
-#   geom_line(aes(x = q1dat$group, y = q1dat$meanNEE))
 ```
 
-```{r}
+```{r, cache = T}
+# get the ameriflux data from the true amerifulx site 
+
 # Load dplyr package    
 library(dplyr)   
 library(amerifluxr)
@@ -452,18 +406,31 @@ data2021 <- base[base$YEAR == 2021 & base$MONTH == 5, ]
 head(data2021)
 ```
 
-
-
 ```{r}
 n2f <- read.csv(nameFileOut)
-tstart <- data2022$TIMESTAMP_START
+tstart <- data2021$TIMESTAMP_START
 n2f_filtered <- data.frame()
 for (x in tstart) {
   n2f_filtered <- rbind(n2f_filtered, n2f[n2f$TIMESTAMP_START == x, ])
 }
-
-plot(data2022$FC ~ n2f_filtered$FC, xlim = c(-20,20), ylim = c(-20,20))
 ```
+
+
+```{r}
+# plot(n2f$TIMESTAMP_START, n2f$FC)
+
+
+data = n2f_filtered[which(n2f_filtered$FC != -9999),]
+plot(data$TIMESTAMP_START, data$FC)
+
+
+# data = n2f[which(n2f$FC != -9999),]
+# plot(data$TIMESTAMP_START, data$FC)
+# 
+# 
+# n2f_filtered
+```
+
 
 
 
@@ -472,13 +439,9 @@ plot(data2022$FC ~ n2f_filtered$FC, xlim = c(-20,20), ylim = c(-20,20))
 **Using metScanR package, find co-located NEON and AmeriFlux sites. Download data for an overlapping time period, and compare FC and H values by making a scatter plot and seeing how far off the data are from a 1:1 line.**
 
 ```{r}
-q2dat = dataDfFlux[,c(3,9)] %>%
-  mutate_all(~replace(., . == -9999, NA)) %>%
-  na.omit()
+plot(data2021$FC ~ n2f_filtered$FC, xlim = c(-5,5), ylim = c(-5,5))
 
-ggplot() +
-  geom_point(aes(q2dat$FC, q2dat$H))+
-  geom_abline(color = "red") +
-  labs(x = "FC", y = "H")
+plot(data2021$H ~ n2f_filtered$H, xlim = c(-20,20), ylim = c(-20,20))
 ```
 
+They look pretty close to the 1:1 line!
