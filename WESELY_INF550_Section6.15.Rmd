@@ -8,6 +8,8 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(lidR)
+library(neonUtilities)
+load("neon_token_source.Rdata")
 
 ```
 
@@ -15,20 +17,71 @@ library(lidR)
 ## Question 1
 **1: How are these two forests similar? How are they different? (3-5 sentences)**
 
-A few places to start if you need them. You don’t have to address these, just in case you need some hints: Climate? How that could affect vegetation structure? Heterogeniety of the ecossytems? How seasonal are they? (hint:PhenoCam) Something else?
+The forest at GUAN is a tropical dry forest. It's mixed forest type with deciduous, evergreen, and scrub vegetation. It has a warm and wet climate compared to BART.
 
-
+The forest at the BART site is a mixed temperate forest. This site had been heavily disturbed by logging activities in the past. BART is a much cooler site than GUAN.
 
 ## Question 2
 **2: Using this NEON tutorial and the tutorials we’ve covered in this textbook (hint: you did half of this workflow in your very first coding lab) pull the NEON AOP derived Canopy Height Model (CHM, DP3.30015.001) and High-resolution orthorectified camera imagery mosaic DP3.30010.001 for each forest and overlay the NEON TOS Woody Vegetation Structure DP1.10098.001 basal diameter data product to evaluate how well AOP captures trees in each forest.**
 
-Generate a labeled 2x2 plot panel including:
+```{r}
+# pull NEON AOP Canopy Height Model 
+chm_dp = as.character('DP1.10098.001')
+# for BART
+chm_bart = loadByProduct(dpID = chm_dp, 
+                     site="BART",
+                     token=NEON_TOKEN,
+                     # year = 2020,
+                     startdate="2022-01", enddate="2022-12",
+                     package="basic",
+                     check.size=F)
 
-Each RGB image with basal diameter overlaid
+zipsByProduct(dpID=chm_dp,
+              site = "BART",
+              startdate = "2022-01",
+              enddate = "2022-12",
+              package = "basic",
+              check.size = FALSE,
+              savepath = "./",
+              token=NEON_TOKEN)
 
-Each CHM with basal diameter overlaid
+# for GUAN
+chm_guan = byFileAOP(dpID = "DP3.30015.001", 
+                     site="GUAN",
+                     token=NEON_TOKEN,
+                     year = 2020,
+                     # startdate="2022-05", enddate="2022-05",
+                     # package="basic",
+                     check.size=F)
 
-Write 2-3 sentences summarizing your findings and thoughts.
+# pull NEON AOP high res orthorectified imagery
+# for BART
+# for GUAN
+
+# pull NEON TOS Woody Veg Structure 
+# for BART
+wood_bart = loadByProduct(
+  dpID = as.character("DP1.10098.001"),
+  site = "BART",
+   token=NEON_TOKEN,
+  startdate="2022-01", 
+  enddate="2022-12",
+  package="basic",
+  check.size=F
+)
+# for GUAN
+
+
+```
+
+
+**Generate a labeled 2x2 plot panel including:**
+
+**Each RGB image with basal diameter overlaid**
+
+**Each CHM with basal diameter overlaid**
+
+**Write 2-3 sentences summarizing your findings and thoughts.**
 
 ## Question 3
 **Use the byTileAOP function of the neonUtilities package to pull a subset of the descrete LiDAR pointcloud for each forest (Hint: You can feed byTileAOP Easting and Northing from your Vegetation Structure dataframe(s)). Use the structural_diversity_metrics function that you defined in section 6.5 of the textbook to process discrete return LiDAR for each site and generte structural diversity metrics.
