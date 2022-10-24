@@ -7,8 +7,13 @@ output: pdf_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(lidR)
+library(tidyverse)
 library(neonUtilities)
+library(BiocManager)
+library(rhdf5)
+library(raster)
+library(rgdal)
+library(geoNEON)
 load("neon_token_source.Rdata")
 
 ```
@@ -25,55 +30,132 @@ The forest at the BART site is a mixed temperate forest. This site had been heav
 **2: Using this NEON tutorial and the tutorials we’ve covered in this textbook (hint: you did half of this workflow in your very first coding lab) pull the NEON AOP derived Canopy Height Model (CHM, DP3.30015.001) and High-resolution orthorectified camera imagery mosaic DP3.30010.001 for each forest and overlay the NEON TOS Woody Vegetation Structure DP1.10098.001 basal diameter data product to evaluate how well AOP captures trees in each forest.**
 
 ```{r}
-# pull NEON AOP Canopy Height Model 
-chm_dp = as.character('DP1.10098.001')
-# for BART
-chm_bart = loadByProduct(dpID = chm_dp, 
-                     site="BART",
-                     token=NEON_TOKEN,
-                     # year = 2020,
-                     startdate="2022-01", enddate="2022-12",
-                     package="basic",
-                     check.size=F)
-
-zipsByProduct(dpID=chm_dp,
-              site = "BART",
-              startdate = "2022-01",
-              enddate = "2022-12",
-              package = "basic",
-              check.size = FALSE,
-              savepath = "./",
-              token=NEON_TOKEN)
-
-# for GUAN
-chm_guan = byFileAOP(dpID = "DP3.30015.001", 
-                     site="GUAN",
-                     token=NEON_TOKEN,
-                     year = 2020,
-                     # startdate="2022-05", enddate="2022-05",
-                     # package="basic",
-                     check.size=F)
-
-# pull NEON AOP high res orthorectified imagery
-# for BART
-# for GUAN
-
-# pull NEON TOS Woody Veg Structure 
-# for BART
-wood_bart = loadByProduct(
-  dpID = as.character("DP1.10098.001"),
-  site = "BART",
-   token=NEON_TOKEN,
-  startdate="2022-01", 
-  enddate="2022-12",
-  package="basic",
-  check.size=F
-)
-# for GUAN
+# # pull NEON AOP Canopy Height Model 
+# chm_dp = as.character('DP1.10098.001')
+# # for BART
+# chm_bart = loadByProduct(dpID = chm_dp, 
+#                          site="BART",
+#                          token=NEON_TOKEN,
+#                          # year = 2020,
+#                          startdate="2022-01", enddate="2022-12",
+#                          package="basic",
+#                          check.size=F)
+# 
+# zipsByProduct(dpID=chm_dp,
+#               site = "BART",
+#               startdate = "2022-01",
+#               enddate = "2022-12",
+#               package = "basic",
+#               check.size = FALSE,
+#               savepath = "./",
+#               token=NEON_TOKEN)
+# 
+# # for GUAN
+# chm_guan = byFileAOP(dpID = "DP3.30015.001", 
+#                      site="GUAN",
+#                      token=NEON_TOKEN,
+#                      year = 2020,
+#                      # startdate="2022-05", enddate="2022-05",
+#                      # package="basic",
+#                      check.size=F)
+# 
+# # pull NEON AOP high res orthorectified imagery
+# # for BART
+# # for GUAN
+# 
+# # pull NEON TOS Woody Veg Structure 
+# # for BART
+# wood_bart = loadByProduct(
+#   dpID = as.character("DP1.10098.001"),
+#   site = "BART",
+#   token=NEON_TOKEN,
+#   startdate="2022-01", 
+#   enddate="2022-12",
+#   package="basic",
+#   check.size=F
+# )
+# # for GUAN
 
 
 ```
 
+
+```{r, cache = T}
+# make vector of sites
+sites <- c("BART","GUAN")
+
+# Download veg structure 
+veglist <- loadByProduct(dpID="DP1.10098.001", 
+                         site= sites,
+                         package="expanded",
+                         check.size=FALSE,
+                         token = NEON_TOKEN)
+
+# Unlist veg data frames
+list2env(veglist,.GlobalEnv)
+
+# get the veg map object
+vegmap <- getLocTOS(veglist$vst_mappingandtagging, "vst_mappingandtagging")
+
+# Merge
+veg <- merge(veglist$vst_apparentindividual,vegmap, by=c("individualID","namedLocation","domainID","siteID","plotID"))
+
+# Separate out the sites
+vegbart <- veg %>%
+  filter(plotID == "BART_013") %>%
+  drop_na(adjNorthing, adjEasting)
+vegguan <- veg %>%
+  filter(plotID == "GUAN_043") %>%
+  drop_na(adjNorthing, adjEasting)
+
+```
+
+
+```{r, cache=TRUE}
+# year we want data for
+yoi <- "2018"
+
+# Download Canopy Height Model from NEON API
+# BART
+byTileAOP(dpID="DP3.30015.001", # CHM
+          site= "BART",
+          year= yoi,
+          easting = vegbart$adjEasting,
+          northing = vegbart$adjNorthing,
+          check.size=FALSE,
+          token = NEON_TOKEN)
+# GUAN
+byTileAOP(dpID="DP3.30015.001", # CHM
+          site= "GUAN",
+          year= yoi,
+          easting = vegguan$adjEasting,
+          northing = vegguan$adjNorthing,
+          check.size=FALSE,
+          token = NEON_TOKEN)
+
+# Download High-resolution orthorectified camera imagery mosaic from NEON API
+# BART
+byTileAOP(dpID="DP3.30010.001", 
+          site="BART",
+          year = yoi,
+          easting = vegbart$adjEasting,
+          northing = vegbart$adjNorthing,
+          check.size=FALSE,
+          token = NEON_TOKEN)
+# GUAN
+byTileAOP(dpID="DP3.30010.001",
+          site="GUAN",
+          year = yoi,
+          easting = vegguan$adjEasting,
+          northing = vegguan$adjNorthing,
+          check.size=FALSE,
+          token = NEON_TOKEN)
+
+# convert to rasters
+chmbart <- raster('./DP3.30015.001/neon-aop-products/2018/FullSite/D01/2018_BART_4/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D01_BART_DP3_317000_4879000_CHM.tif')
+chmguan <- raster('./DP3.30015.001/neon-aop-products/2018/FullSite/D04/2018_GUAN_1/L3/DiscreteLidar/CanopyHeightModelGtif/NEON_D04_GUAN_DP3_725000_1988000_CHM.tif')
+
+```
 
 **Generate a labeled 2x2 plot panel including:**
 
@@ -81,12 +163,219 @@ wood_bart = loadByProduct(
 
 **Each CHM with basal diameter overlaid**
 
+```{r, cache=TRUE}
+# PLOTTING
+
+# make image bricks
+imagebart <-brick('./DP3.30010.001/neon-aop-products/2018/FullSite/D01/2018_BART_4/L3/Camera/Mosaic/2018_BART_4_317000_4879000_image.tif')
+imageguan <- brick('./DP3.30010.001/neon-aop-products/2018/FullSite/D04/2018_GUAN_1/L3/Camera/Mosaic/2018_GUAN_1_725000_1988000_image.tif')
+
+# the arrangement of the subplots
+par(mfrow=c(2,2))
+# plot the canopy height model for BART
+plot(chmbart, xlim=c(317500,317540), ylim=c(4879020,4879050), main="BART CHM", xlab = "Easting", ylab = "Northing")
+# add the woody veg structure for BART
+points(vegbart$adjEasting,vegbart$adjNorthing, pch=1, cex=vegbart$stemDiameter/100/2, col = "red")
+# plot the canopy height model for GUAN
+plot(chmguan, xlim=c(725780,725850), ylim=c(1988000,1988100), main="GUAN CHM", xlab = "Easting", ylab = "Northing")
+# add the woody veg str for GUAN
+points(vegguan$adjEasting,vegguan$adjNorthing, pch=1, cex=vegguan$stemDiameter/100/2, col = "red")
+# plot the ortho image for BART
+plot.new()
+plot.window(xlim=c(317500,317540), ylim=c(4879020,4879050))
+plotRGB(imagebart, r=1,g=2,b=3, axes = TRUE, main="BART Image", add=TRUE)
+# add the woody veg structure for BART
+points(vegbart$adjEasting,vegbart$adjNorthing, pch=1, cex=vegbart$stemDiameter/100/2, col = "red")
+# plot the orthose image for GUAN
+plot.new()
+plot.window(xlim=c(725780,725850), ylim=c(1988000,1988100))
+plotRGB(imageguan, r=1,g=2,b=3, axes = TRUE, main="GUAN Image", add=TRUE)
+# add the woody veg str for GUAN
+points(vegguan$adjEasting,vegguan$adjNorthing, pch=1, cex=vegguan$stemDiameter/100/2, col = "red")
+
+```
+
+
 **Write 2-3 sentences summarizing your findings and thoughts.**
 
-## Question 3
-**Use the byTileAOP function of the neonUtilities package to pull a subset of the descrete LiDAR pointcloud for each forest (Hint: You can feed byTileAOP Easting and Northing from your Vegetation Structure dataframe(s)). Use the structural_diversity_metrics function that you defined in section 6.5 of the textbook to process discrete return LiDAR for each site and generte structural diversity metrics.
+The NEON AOP data is quite course, which makes identifying individual trees within a canopy nearly impossible. However the combination of the AOP data with the individual tree measurements from the woody vegetation data set could enhance the AOP data. 
 
-Using lidR generate a labeled 2-panel plot of your canopy height model for each forest
-Using lidR generate a labeled 2-panel plot of a cross-section for each forest
-Use section 6.5.3 Comparing Metrics Between Forests to compare each forest and generate a a clean summary table via kable
-Using Table 2 from LaRue, Wagner, et al. (2020) as a reference, write 1-2 paragraphs summarizing the differences in forest structural diversity between the two forests and how they may relate to your answers to Question 1.**
+## Question 3
+**Use the byTileAOP function of the neonUtilities package to pull a subset of the descrete LiDAR pointcloud for each forest (Hint: You can feed byTileAOP Easting and Northing from your Vegetation Structure dataframe(s)). Use the structural_diversity_metrics function that you defined in section 6.5 of the textbook to process discrete return LiDAR for each site and generate structural diversity metrics.
+
+```{r, cache=TRUE}
+
+library(lidR, quietly = T)
+library(gstat, quietly = T)
+
+# get the lidar pointcloud for BART
+byTileAOP(dpID="DP1.30003.001",
+          site= "BART",
+          year= yoi,
+          easting = extent(chmbart)[1],
+          northing = extent(chmbart)[3],
+          check.size=FALSE,
+          token = NEON_TOKEN)
+
+# get the lidar pointcloud for GUAN
+byTileAOP(dpID="DP1.30003.001",
+          site= "GUAN",
+          year= yoi,
+          easting = extent(chmguan)[1],
+          northing = extent(chmguan)[3],
+          check.size=FALSE,
+          token = NEON_TOKEN)
+
+# convert the raw data to an actual pointcloud 
+pcbart <- lidR::readLAS('/Users/natashawesely/Documents/GitHub/INF550/DP1.30003.001/neon-aop-products/2018/FullSite/D01/2018_BART_4/L1/DiscreteLidar/ClassifiedPointCloud/NEON_D01_BART_DP1_317000_4879000_classified_point_cloud_colorized.laz')
+pcguan <- lidR::readLAS('/Users/natashawesely/Documents/GitHub/INF550/DP1.30003.001/neon-aop-products/2018/FullSite/D01/2018_BART_4/L1/DiscreteLidar/ClassifiedPointCloud/NEON_D01_BART_DP1_317000_4879000_classified_point_cloud_colorized.laz')
+
+```
+
+
+**Using lidR generate a labeled 2-panel plot of your canopy height model for each forest**
+
+```{r}
+lidR::plot(pcbart)
+lidR::plot(pcguan)
+```
+
+
+**Using lidR generate a labeled 2-panel plot of a cross-section for each forest**
+
+```{r, cache = T}
+## BART
+# Correct for elevation
+# Choose a 40 x 40 m spatial extent, which is the extent for NEON base plots.
+# First set the center of where you want the plot to be
+xbart <- 317500 #easting
+ybart <- 4879500 #northing
+#Cut out a 200 x 200 m buffer by adding 100 m to easting and
+#northing coordinates (x,y).
+data.200m.b <-
+  clip_rectangle(pcbart,
+                 xleft = (xbart - 100), ybottom = (ybart - 100),
+                 xright = (xbart + 100), ytop = (ybart + 100))
+# Correct for ground height using a kriging function to interpolate
+#elevation from ground points in the .laz file.
+dtm.b <- grid_terrain(data.200m.b, 1, kriging(k = 10L))
+data.200m.b <- normalize_height(data.200m.b, dtm.b)
+#Will often give a warning if not all points could be corrected,
+#but visually check to see if it corrected for ground height.
+lidR::plot(data.200m.b)
+#There's a few uncorrected points
+#Clip 20 m out from each side of the easting and northing
+#coordinates (x,y).
+data.40m.b <-
+  clip_rectangle(data.200m.b,
+                 xleft = (xbart - 20), ybottom = (ybart - 20),
+                 xright = (xbart + 20), ytop = (ybart + 20))
+
+data.40m.b@data$Z[data.40m.b@data$Z <= .5] <- NA
+#This line filters out all z_vals below .5 m as we are less interested in shrubs/trees.
+# visualize the clipped plot point cloud
+lidR::plot(data.40m.b)
+
+## GUAN
+# Correct for elevation
+# Choose a 40 x 40 m spatial extent, which is the extent for NEON base plots.
+# First set the center of where you want the plot to be
+xguan <- 725500 #easting
+yguan <- 1988500 #northing
+# Cut out a 200 x 200 m buffer by adding 100 m to easting and
+#northing coordinates (x,y).
+data.200m.g <-
+  lasclipRectangle(pcguan,
+                   xleft = (xguan - 100), ybottom = (yguan - 100),
+                   xright = (xguan + 100), ytop = (yguan + 100))
+# Correct for ground height using a kriging function to interpolate
+#elevation from ground points in the .laz file.
+dtm.g <- grid_terrain(data.200m.g, 1, kriging(k = 10L))
+## Warning: There were 23 degenerated ground points. Some X Y coordinates were
+## repeated but with different Z coordinates. min Z were retained.
+data.200m.g <- lasnormalize(data.200m.g, dtm.g)
+#Will often give a warning if not all points could be corrected,
+#but visually check to see if it corrected for ground height.
+lidR::plot(data.200m.g)
+#There's a few uncorrected points
+#Clip 20 m out from each side of the easting and northing
+#coordinates (x,y).
+data.40m.g <-
+  lasclipRectangle(data.200m.g,
+                   xleft = (xguan - 20), ybottom = (yguan - 20),
+                   xright = (xguan + 20), ytop = (yguan + 20))
+
+data.40m.g@data$Z[data.40m.g@data$Z <= .5] <- NA
+# This line filters out all z_vals below .5 m
+# visualize the clipped plot point cloud
+lidR::plot(data.40m.g)
+
+```
+
+**Use section 6.5.3 Comparing Metrics Between Forests to compare each forest and generate a a clean summary table**
+
+```{r, cache = T}
+# write function to run all 13 veg structure metrics in a single function.
+structural_diversity_metrics <- function(data.40m,x,y) {
+  chm <- grid_canopy(data.40m, res = 1, dsmtin())
+  mean.max.canopy.ht <- mean(chm@data@values, na.rm = TRUE)
+  max.canopy.ht <- max(chm@data@values, na.rm=TRUE)
+  rumple <- rumple_index(chm) #calculate rumple, a ratio of outer canopy surface area to ground surface area (1600 m^2)
+  top.rugosity <- sd(chm@data@values, na.rm = TRUE) #top rugosity, the standard deviation of pixel values in chm = measure of outer canopy roughness
+  cells <- length(chm@data@values)
+  chm.0 <- chm
+  chm.0[is.na(chm.0)] <- 0
+  zeros <- which(chm.0@data@values == 0)
+  deepgaps <- length(zeros) #number of deep gaps
+  deepgap.fraction <- deepgaps/cells #deep gap fraction, the number of deep gaps in the chm relative to total number of chm pixel
+  cover.fraction <- 1 - deepgap.fraction #cover fraction, the inverse of deep gap fraction
+  vert.sd <- cloud_metrics(data.40m, sd(Z, na.rm = TRUE)) #height SD, the standard deviation of height values for all points
+  
+  17
+  
+  sd.1m2 <- grid_metrics(data.40m, sd(Z), 1)
+  sd.sd <- sd(sd.1m2[,3], na.rm = TRUE) # The standard deviation of height values
+  Zs <- data.40m@data$Z
+  Zs <- Zs[!is.na(Zs)]
+  entro <- entropy(Zs, by = 1) # Quantifies diversity & evenness of point cloud heights
+  gap_frac <- gap_fraction_profile(Zs, dz = 1, z0=3)
+  GFP.AOP <- mean(gap_frac$gf) # Gap fraction profile, assesses the distribution of gaps in the canopy volume
+  LADen<-LAD(Zs, dz = 1, k=0.5, z0=3)
+  VAI.AOP <- sum(LADen$lad, na.rm=TRUE) # Leaf area density
+  VCI.AOP <- VCI(Zs, by = 1, zmax=100) # A vertical complexity index
+  out.plot <- data.frame(
+    matrix(c(x, y, mean.max.canopy.ht,max.canopy.ht,
+             rumple,deepgaps, deepgap.fraction,
+             cover.fraction, top.rugosity, vert.sd,
+             sd.sd, entro, GFP.AOP, VAI.AOP,VCI.AOP),
+           ncol = 15))
+  colnames(out.plot) <-
+    c("easting", "northing", "mean.max.canopy.ht.aop",
+      "max.canopy.ht.aop", "rumple.aop", "deepgaps.aop",
+      "deepgap.fraction.aop", "cover.fraction.aop",
+      "top.rugosity.aop","vert.sd.aop","sd.sd.aop",
+      "entropy.aop", "GFP.AOP.aop",
+      "VAI.AOP.aop", "VCI.AOP.aop")
+  print(out.plot)
+}
+
+# run the function for each site
+BART_structural_diversity <- structural_diversity_metrics(data.40m.b,xbart,ybart)
+GUAN_structural_diversity <- structural_diversity_metrics(data.40m.g,xguan,yguan)
+
+# combine the function runs for each site
+combined_results=rbind(BART_structural_diversity,
+GUAN_structural_diversity)
+
+# Add row names for clarity
+row.names(combined_results)=c("BART","GUAN")
+# print the comparison 
+combined_results
+
+```
+
+
+**Using Table 2 from LaRue, Wagner, et al. (2020) as a reference, write 1-2 paragraphs summarizing the differences in forest structural diversity between the two forests and how they may relate to your answers to Question 1.**
+
+Unsurprisingly, these forested sites are quite different. BART is on average taller with a higher leaf area density compared to GUAN. BART also has a higher standard deviation for height measurements, indicating that the forest canopy is more vertically diverse than GUAN. This higher height standard deviation may also indicate more different species close together compared to GUAN. Perhaps because the tree/leaf density is less intense at GUAN, the trees don't have to compete for light as much, therefore there is more canopy height homogeneity and less species diversity. 
+
