@@ -1,0 +1,58 @@
+---
+title: "INF 550 Section 7.46"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# NASA EOS Culmination Write Up
+**Write up a 1-page derived data product or research pipeline proposal summary of a project that you might want to explore using NASA EOS data. Include the types of data that you would need to implement this project and how you would retrieve them. Save this summary as you will be refining and adding to your ideas over the course of the semester.**
+
+For my PhD research, I am trying to constrain a process-based model representing the major ecological processes in four different ecosystem types in the Sevilleta Wildlife Refuge area: a desert grassland, a plains grassland, a desert shrubland, and a juniper savanna. In these four different ecosystem types, LTER experiments have been going on for several years. There are drought experiments (i.e., reducing the total amount of precipitation entering the ecosystem), precipitation variability experiments (i.e., increasing the sporadicity of precipitation entering the ecosystem), and combination experiments with both drought and precipitation variability treatments. These drought and precipitation variability treatments reflect what climatologists anticipate in our future under the new climate regime.
+
+I am planning to use the dryland version of TECO (Hou et al. 2021) as my foundational process-based model, which I will modify to (a) reflect the vegetation structure for each ecosystem type and (b) integrate more data streams.
+
+Once we have successfully constrained the model using data, we can project into the future to make useful inferences about how these four different ecosystem types will be impacted by different potential climate regimes (e.g., more drought and more sporadic precipitation).
+
+A project that I might want to explore using NASA EOS data would be incorporate remotely sensed data to help constrain some of the carbon pool and/or flux related parameters in my process-based model. For example, I might incorporate ECOSTRESS data to help constrain the parameters in my evapo-transpiration flux equation. I could also incorporate some kind of remotely sensed NDVI product to help constrain the leaf carbon pool parameters through time. 
+
+
+
+
+Incorporating phenocam data could allow us to estimate phenolgical shifts, such as green-up and brown-down, which have major implications for the amount of photosynthesis going on and therefore the amount of carbon being sequestered. Once carbon “enters” the process-based model, it moves through the different plant issue and ultimately decomposes in the soil.
+
+I want to take phenocam data about spring and fall phenological shifts on plants that match our four ecosystem types of interest from the same around as the Sevilleta Wildlife Refuge, curate the data, and feed in into the model-data fusion algorithms I am using to constrain the parameters in our process-based model.
+
+I would want to use all the phenocam data available in the Sevilleta Wildlife Refuge. Different cameras have different record lengths, but luckily this temporal inconsistency is not an issue for data assimilation and model-data fusion.
+
+**Tables or bullet lists of specific data products**
+
+1) MOD16A2.061 is Evapotranspiration (ET & LE) from LP DAAC
+
+2) MOD16A2.006 is Evapotranspiration (ET & LE) from LP DAAC
+
+3) MOD13A1.006 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+2) MOD13A1.061 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+4) MOD13A2.006 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+5) MOD13A2.061 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+6) MOD13A3.006 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+7) MOD13A3.061 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+8) MOD13Q1.006 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+9) MOD13Q1.061 is Vegetation Indices (NDVI & EVI) from LP DAAC
+
+**An overarching high-quality figure to show how these data align**
+
+
+
+**One paragraph summarizing how this data or analysis is useful to you and/or the infrastructure.**

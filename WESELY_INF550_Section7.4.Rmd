@@ -1,0 +1,18 @@
+---
+title: "INF 550 Section 7.4"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 
+
+```{r}
+load('EARTHDATA_Token.Rdata')
+exists('EARTHDATA_User')
+```
+
