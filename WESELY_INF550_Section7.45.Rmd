@@ -117,8 +117,8 @@ products <- setNames(divided_products,fromJSON(all_Prods)$ProductAndVersion)
 sprintf("AppEEARS currently supports %i products." ,length(products))   
 ```
 
-```{r}
-# Next, look at the product’s names and descriptions. Below, the ‘ProductAndVersion’ and ‘Description’ are printed for all products.
+```{r, eval=F, include=F}
+# Next, look at the product’s names and descriptions. Below, the ‘ProductAndVersion’ and ‘Description’ are printed for aßll products.
 
 # Loop through the products in the list and print the product name and description
 for (p in products){                                   
@@ -133,6 +133,7 @@ for (p in products){
 # Convert the MCD15A3H.006 info to JSON object and print the prettified info
 prettify(toJSON(products$"MCD15A3H.006")) 
 ```
+
 
 ```{r, include = F, eval = FALSE}
 # also, the products can be searched using their description. Below, search for products containing Leaf Area Index in their description and make a list of their productAndVersion.
@@ -164,6 +165,7 @@ for (p in products){
 # make a list of both NDVI products and 250m products
 intersect(NDVI_Products, m250_Products)
 ```
+
 
 ```{r}
 # Using the info above, Create a list of desired products.
@@ -203,7 +205,7 @@ names(fromJSON(MYD13Q1.006_response))
 desired_layers <- c("_250m_16_days_NDVI") 
 
 # Create a data frame including the desired data products and layers
-layers <- data.frame(product = desired_prods, layer = desired_layers)
+layers <- data.frame(product = desired_products, layer = desired_layers)
 ```
 
 
@@ -367,13 +369,13 @@ prettify(q_response)                                      # Print the prettified
 # List Quality Layers
 # This API call will list all of the quality layer information for a product. For more information visit AppEEARS API documentation
 
-productAndVersion <- 'MCD15A3H.006'                            # Assign ProductAndVersion to a variable 
+productAndVersion <- 'MOD13Q1.006'                            # Assign ProductAndVersion to a variable 
 # Request the quality info from quality API for a specific product
-MCD15A3H_req <- GET(paste0(API_URL, "quality/", productAndVersion))
-MCD15A3H_content <- content(MCD15A3H_req)                      # Retrieve the content of request
-MCD15A3H_quality <- toJSON(MCD15A3H_content, auto_unbox = TRUE)# Convert the info to JSON object
-remove(MCD15A3H_req, MCD15A3H_content)                         # Remove the variables that are not needed anymore
-prettify(MCD15A3H_quality)                                     # Print the prettified quality information
+MOD13Q1_req <- GET(paste0(API_URL, "quality/", productAndVersion))
+MOD13Q1_content <- content(MOD13Q1_req)                      # Retrieve the content of request
+MOD13Q1_quality <- toJSON(MOD13Q1_content, auto_unbox = TRUE)# Convert the info to JSON object
+remove(MOD13Q1_req, MOD13Q1_content)                         # Remove the variables that are not needed anymore
+prettify(MOD13Q1_quality)                                     # Print the prettified quality information
 ```
 
 
@@ -381,7 +383,7 @@ prettify(MCD15A3H_quality)                                     # Print the prett
 # Inspect Quality Values
 # This API call will list all of the values for a given quality layer.
 
-quality_layer <- 'FparLai_QC'                                 # assign a quality layer to a variable
+quality_layer <- '_250m_16_days_VI_Quality'                                 # assign a quality layer to a variable
 # Request the specified quality layer info from quality API
 quality_req <- GET(paste0(API_URL, "quality/",  productAndVersion, "/", quality_layer, sep = ""))
 quality_content <- content(quality_req)                        # Retrieve the content of request
@@ -395,15 +397,13 @@ prettify(quality_response)                                     # Print the quali
 # Decode Quality Values
 # This API call will decode the bits for a given quality value.
 
-quality_value <- 1                        # Assign a quality value to a variable 
+quality_value <- 0                        # Assign a quality value to a variable 
 # Request and retrieve information for provided quality value from quality API URL 
 response <- content(GET(paste0(API_URL, "quality/", productAndVersion, "/", quality_layer, "/", quality_value)))
 q_response <- toJSON(response, auto_unbox = TRUE)     # Convert the info to JSON object
 remove(response)                                      # Remove the variables that are not needed anymore
 prettify(q_response)                                  # Print the prettified response
 ```
-
-
 
 
 
@@ -416,10 +416,303 @@ prettify(q_response)                                  # Print the prettified res
 # Use the readr package to load the CSV file containing the results from the AppEEARS request.
 
 # Make a list of csv files in the output directory
-files <- list.files(outDir, pattern = "\\MOD11A2-006-results.csv$") 
-# Read the MOD11A2 results
-df <- read_csv(paste0(outDir,"/", files))
+files <- list.files(outDir, pattern = "\\NEON-JORN-TEAK-NDVI-MOD13Q1-006-results.csv$") 
+# Read the results
+dfMOD <- read_csv(paste0(outDir,"/", files))
+# filter for bad data 
+dfMOD = dfMOD[dfMOD$MOD13Q1_006__250m_16_days_VI_Quality_MODLAND_Description == "VI produced with good quality",]
+
+# Make a list of csv files in the output directory
+files <- list.files(outDir, pattern = "\\NEON-JORN-TEAK-NDVI-MYD13Q1-006-results.csv$") 
+# Read the results
+dfMYD <- read_csv(paste0(outDir,"/", files))
+# filter for bad data 
+dfMYD = dfMYD[dfMYD$MYD13Q1_006__250m_16_days_VI_Quality_MODLAND_Description == "VI produced with good quality",]
 ```
+
+## Question 4
+**Plot 3 years of NDVI from MODIS AQUA and TERA as a timeseries.**
+
+```{r}
+# split df's by site
+dfmod_JORN <- dfMOD %>% filter( Category =='JORN')
+dfmod_TEAK <- dfMOD %>% filter( Category =='TEAK')
+dfmyd_JORN <- dfMYD %>% filter( Category =='JORN')
+dfmyd_TEAK <- dfMYD %>% filter( Category =='TEAK')
+
+```
+
+
+```{r}
+# JORN
+ggplot()+
+  geom_line(data = dfmod_JORN,
+            aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_JORN,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  scale_color_manual(name = NULL, values=c("blue", "goldenrod")) +
+  labs(title = "JORN Time Series", x = "Date", y = "NDVI")
+
+```
+
+```{r}
+# TEAK
+ggplot()+
+  geom_line(data = dfmod_TEAK,
+            aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_TEAK,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  scale_color_manual(name = NULL, values=c("blue", "goldenrod")) +
+  labs(title = "TEAK Time Series", x = "Date", y = "NDVI")
+```
+
+## Question 5
+**Constrain a 3-week window for ‘peak greeness’ from MODIS and highlight it on your timeseries plot.**
+
+```{r}
+# what is the date with the highest greenness
+which.max(dfmod_JORN$MOD13Q1_006__250m_16_days_NDVI) # 17
+
+# make new object that is ~3 weeks JORN's peak greenness
+rect = rect <- data.frame(xmin=dfmod_JORN$Date[15], xmax=dfmod_JORN$Date[18], ymin=-Inf, ymax=Inf)
+
+# add this^ to timeseries plot
+ggplot()+
+  geom_line(data = dfmod_JORN,
+            aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_JORN,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  scale_color_manual(name = NULL, values=c("blue", "goldenrod")) +
+  labs(title = "JORN Time Series", x = "Date", y = "NDVI") +
+  geom_rect(data=rect, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+            color="grey20", alpha=0.5,
+            inherit.aes = FALSE)
+
+```
+
+```{r}
+# im only going to consider TERA greennes for simplicity since aqua & tera are giving me different greenness peaks at TEAK
+
+# what is the date with the highest greenness
+which.max(dfmod_TEAK$MOD13Q1_006__250m_16_days_NDVI) # 14
+
+# make new object that is ~3 weeks TEAK's peak greenness
+rect = rect <- data.frame(xmin=dfmod_TEAK$Date[12], xmax=dfmod_TEAK$Date[15], ymin=-Inf, ymax=Inf)
+
+# add this^ to timeseries plot
+ggplot()+
+  geom_line(data = dfmod_TEAK,
+            aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_TEAK,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  scale_color_manual(name = NULL, values=c("blue", "goldenrod")) +
+  labs(title = "TEAK Time Series", x = "Date", y = "NDVI") +
+  geom_rect(data=rect, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+            color="grey20", alpha=0.5,
+            inherit.aes = FALSE)
+```
+
+## Question 6
+**Pull the canopy-level gcc90 from PhenoCam for the same site and the same time period as above.**
+
+```{r, warning=F, message=F}
+library(phenocamapi, quietly = T)
+library(xROI, quietly = T)
+
+# download phenocam data for JORN
+JORN_1000 <- get_pheno_ts(site = 'NEON.D14.JORN.DP1.00033', vegType = 'GR', roiID = 1000, type = '3day')
+# filter for the same date range
+JORN_1000 = JORN_1000 %>%
+  filter(date >= "2017-01-01",
+         date <= "2019-12-31") 
+
+# download phenocam data for TEAK
+TEAK_1000 <- get_pheno_ts(site = 'NEON.D17.TEAK.DP1.00033', vegType = 'EN', roiID = 1000, type = '3day')
+# filter for the same date range
+# filter for the same date range
+TEAK_1000 = TEAK_1000 %>%
+  filter(date >= "2017-01-01",
+         date <= "2019-12-31") 
+```
+
+## Question 7
+**Plot the PhenoCam and MODIS timeseries on the same plot.**
+
+```{r}
+# JORN
+ggplot()+
+  geom_line(data = dfmod_JORN,aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_JORN,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  geom_line(data = JORN_1000, aes(x = as.Date(date), y = JORN_1000$gcc_90, color = "Gcc"))+
+  scale_color_manual(name = NULL, values=c("blue", "darkgreen","goldenrod" )) +
+  labs(title = "JORN Time Series", x = "Date", y = "NDVI")
+
+# TEAK
+ggplot()+
+  geom_line(data = dfmod_TEAK,
+            aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_TEAK,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  geom_line(data = TEAK_1000, aes(x = as.Date(date), y = gcc_90, color = "Gcc"))+
+  scale_color_manual(name = NULL, values=c("blue", "darkgreen", "goldenrod")) +
+  labs(title = "TEAK Time Series", x = "Date", y = "NDVI") 
+```
+
+## Question 8
+**Constrain a 3-week window for ‘peak greeness’ from PhenoCam and highlight it on your timeseries.**
+
+```{r}
+# which date/row is the highest greenness at JORN?
+which.max(JORN_1000$gcc_90) ## 55
+# define a rectanlge around peak greenness
+rectGccJORN = data.frame(xmin= as.Date(JORN_1000$date[52]), xmax=as.Date(JORN_1000$date[59]), ymin=-Inf, ymax=Inf)
+# add the plot
+ggplot()+
+  geom_line(data = dfmod_JORN,aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_JORN,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  geom_line(data = JORN_1000, aes(x = as.Date(date), y = JORN_1000$gcc_90, color = "Gcc"))+
+  scale_color_manual(name = NULL, values=c("blue", "darkgreen","goldenrod" )) +
+  labs(title = "JORN Time Series", x = "Date", y = "NDVI") +
+  geom_rect(data=rectGccJORN, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+            color="grey20", alpha=0.5,
+            inherit.aes = FALSE)
+
+# which date/row is the highest greenness at TEAK?
+which.max(TEAK_1000$gcc_90) ## 32
+# define a rectanlge around peak greenness
+rectGccTEAK = data.frame(xmin= as.Date(TEAK_1000$date[29]), xmax=as.Date(TEAK_1000$date[34]), ymin=-Inf, ymax=Inf)
+# add the plot
+ggplot()+
+  geom_line(data = dfmod_TEAK,aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_TEAK,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  geom_line(data = TEAK_1000, aes(x = as.Date(date), y = TEAK_1000$gcc_90, color = "Gcc"))+
+  scale_color_manual(name = NULL, values=c("blue", "darkgreen","goldenrod" )) +
+  labs(title = "TEAK Time Series", x = "Date", y = "NDVI") +
+  geom_rect(data=rectGccTEAK, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+            color="grey20", alpha=0.5,
+            inherit.aes = FALSE)
+```
+
+## Question 9
+**Find the timing of the AOP flights that have occured at your sites over the same time period. Add those dates as a vertical line.**
+
+JORN flight dates (b/w 2017 & 2019):
+
+- 2017083115
+- 2017082315
+- 2017083015
+- 2018083115
+- 2019082615
+- 2019082514
+- 2019082715
+
+TEAK flight dates:
+
+- 2017062815
+- 2017063016
+- 2017062915
+- 2017062715
+- 2018061416
+- 2018061515
+- 2018061615
+- 2019061715
+- 2019061615
+- 2019061515
+- 2019061415
+
+```{r}
+JORNflights = lubridate::ymd_h(c(2017083115,
+2017082315,
+2017083015,
+2018083115,
+2019082615,
+2019082514,
+2019082715))
+
+ggplot()+
+  geom_line(data = dfmod_JORN,aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_JORN,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_JORN,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  geom_line(data = JORN_1000, aes(x = as.Date(date), y = JORN_1000$gcc_90, color = "Gcc"))+
+  scale_color_manual(name = NULL, values=c("blue", "darkgreen","goldenrod" )) +
+  labs(title = "JORN Time Series", x = "Date", y = "NDVI") +
+  geom_rect(data=rectGccJORN, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+            color="grey20", alpha=0.5,
+            inherit.aes = FALSE) +
+  geom_vline(aes(xintercept = as.Date(JORNflights)), color = "red")
+
+
+
+TEAKflights = lubridate::ymd_h(c(2017062815,
+2017063016,
+2017062915,
+2017062715,
+2018061416,
+2018061515,
+2018061615,
+2019061715,
+2019061615,
+2019061515,
+2019061415))
+
+ggplot()+
+  geom_line(data = dfmod_TEAK,aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_TEAK,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  geom_line(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA")) +
+  geom_point(data = dfmyd_TEAK,aes(x= Date, y = MYD13Q1_006__250m_16_days_NDVI, color = "AQUA"))+
+  geom_line(data = TEAK_1000, aes(x = as.Date(date), y = TEAK_1000$gcc_90, color = "Gcc"))+
+  scale_color_manual(name = NULL, values=c("blue", "darkgreen","goldenrod" )) +
+  labs(title = "TEAK Time Series", x = "Date", y = "NDVI") +
+  geom_rect(data=rectGccTEAK, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax),
+            color="grey20", alpha=0.5,
+            inherit.aes = FALSE) +
+  geom_vline(aes(xintercept = as.Date(TEAKflights)), color = "red")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 ```{r}
 # Select the MOD11A2.006 LST Day column for the data from SOAP using the dplyr package.
