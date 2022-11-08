@@ -12,6 +12,11 @@ knitr::opts_chunk$set(echo = TRUE)
 # USGS NWIS Culmination Write Up
 **Write up a 1-page derived data product or research pipeline proposal summary of a project that you might want to explore using USGS NWIS and USGS GDP data. Include the types of data that you would need to implement this project and how you would retrieve them. Save this summary as you will be refining and adding to your ideas over the course of the semester.**
 
+An idea for a research project that I might want to explore using USGS NWIS and USGS GDP data is investigating how watershed attributes affect watershed function in the Sierra Nevada Mountains. Land forms aggregate into watersheds that function as inherent units, reflecting geologic and hydrologic processes. Spatial patterns of land forms are observable in watersheds in the Sierras: talus fields are found in the upper portion of the watershed; cliff bands create linear features without vegetation; depressions accumulate water and enable patches of dense foliage. Landforms aggregated to the watershed-scale may reveal novel patterns of topography’s influence on watershed's functionality compared to previously utilized scales. Furthermore, the watershed becomes more influential in
+the context of predicted extreme fire weather conditions as intensity of winds and solar radiation input
+relate to structural and spatial attributes of the watershed.
+
+USGS has 
 
 **Tables or bullet lists of specific data products**
 
