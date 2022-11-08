@@ -1,0 +1,23 @@
+---
+title: "INF 550 Section 8.31"
+author: "Natasha Wesely"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# USGS NWIS Culmination Write Up
+**Write up a 1-page derived data product or research pipeline proposal summary of a project that you might want to explore using USGS NWIS and USGS GDP data. Include the types of data that you would need to implement this project and how you would retrieve them. Save this summary as you will be refining and adding to your ideas over the course of the semester.**
+
+
+**Tables or bullet lists of specific data products**
+
+**An overarching high-quality figure to show how these data align**
+
+**One paragraph summarizing how this data or analysis is useful to you and/or the infrastructure.**
+
+
+

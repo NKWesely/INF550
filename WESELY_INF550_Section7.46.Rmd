@@ -20,15 +20,6 @@ Once we have successfully constrained the model using data, we can project into 
 
 A project that I might want to explore using NASA EOS data would be incorporate remotely sensed data to help constrain some of the carbon pool and/or flux related parameters in my process-based model. For example, I might incorporate ECOSTRESS data to help constrain the parameters in my evapo-transpiration flux equation. I could also incorporate some kind of remotely sensed NDVI product to help constrain the leaf carbon pool parameters through time. 
 
-
-
-
-Incorporating phenocam data could allow us to estimate phenolgical shifts, such as green-up and brown-down, which have major implications for the amount of photosynthesis going on and therefore the amount of carbon being sequestered. Once carbon “enters” the process-based model, it moves through the different plant issue and ultimately decomposes in the soil.
-
-I want to take phenocam data about spring and fall phenological shifts on plants that match our four ecosystem types of interest from the same around as the Sevilleta Wildlife Refuge, curate the data, and feed in into the model-data fusion algorithms I am using to constrain the parameters in our process-based model.
-
-I would want to use all the phenocam data available in the Sevilleta Wildlife Refuge. Different cameras have different record lengths, but luckily this temporal inconsistency is not an issue for data assimilation and model-data fusion.
-
 **Tables or bullet lists of specific data products**
 
 1) MOD16A2.061 is Evapotranspiration (ET & LE) from LP DAAC
@@ -53,6 +44,24 @@ I would want to use all the phenocam data available in the Sevilleta Wildlife Re
 
 **An overarching high-quality figure to show how these data align**
 
+```{r, warning=F, message=F}
+library(tidyverse, quietly = T)
+# Read the results
+dfMOD <- read_csv('/Users/natashawesely/Documents/GitHub/INF550/data/NEON-JORN-TEAK-NDVI-MOD13Q1-006-results.csv')
+# filter for bad data 
+dfMOD = dfMOD[dfMOD$MOD13Q1_006__250m_16_days_VI_Quality_MODLAND_Description == "VI produced with good quality",]
+# seperate out sevilleta site
+dfmod_JORN <- dfMOD %>% filter( Category =='JORN')
 
+ggplot()+
+  geom_line(data = dfmod_JORN, aes(x= Date, 
+                y = MOD13Q1_006__250m_16_days_NDVI, 
+                color = "TERA"))+
+  geom_point(data = dfmod_JORN,aes(x= Date, y = MOD13Q1_006__250m_16_days_NDVI, color = "TERA")) +
+  scale_color_manual(name = NULL, values=c("forestgreen")) +
+  labs(title = "JORN NDVI Time Series", x = "Date", y = "NDVI")
+```
 
 **One paragraph summarizing how this data or analysis is useful to you and/or the infrastructure.**
+
+These remotely sensed data prodcuts can help me constrain parameters in my process-based TECO modeling for my PhD research. These remotely sensed data products can help me constrain parameters related to fluxes and carbon pools. The TECO model includes most major components of the carbon cycle, water cycle, and energy cycle. 

@@ -10,7 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 #
-```{r, include=FALSE}
+```{r, include=FALSE, eval = F}
 # Packages you will need for AppEEARS API Tutorials
 packages = c('getPass','httr','jsonlite','ggplot2','dplyr','tidyr','readr','geojsonio','geojsonR','rgdal','sp', 'raster', 'rasterVis', 'RColorBrewer', 'jsonlite')
 
@@ -62,7 +62,7 @@ suppressWarnings(dir.create(outDir))
 ```{r}
 # Login to Earth Data
 # To submit a request, you must first login to the AppEEARS API. Use your private R Script to enter your NASA Earthdata login Username and Password.
-load('EARTHDATA_Token.Rdata')
+load('EARTHDATA_Token2.Rdata')
 exists('EARTHDATA_User')
 
 # rename my user name id for simplicity
@@ -701,148 +701,4 @@ ggplot()+
   geom_vline(aes(xintercept = as.Date(TEAKflights)), color = "red")
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-# Select the MOD11A2.006 LST Day column for the data from SOAP using the dplyr package.
-
-lst_SOAP <- df %>%
-  # Filter df
-  filter(Category == "SOAP") %>%  
-  # Select desired columns
-  select(Latitude, Longitude, Date ,MOD11A2_006_LST_Day_1km, MOD11A2_006_LST_Night_1km)
-
-# extract information for LST_DAY_1KM from MOD11_response of product service call from earlier in the tutorial.
-
-#fromJSON(MOD11_response)$LST_Day_1km                        # Extract all the info for LST_Day_1km layer
-
-fillValue <- fromJSON(MOD11_response)$LST_Day_1km$FillValue  # Assign fill value to a variable
-unit <- fromJSON(MOD11_response)$LST_Day_1km$Units           # Assign unit to a variable
-sprintf("Fill value for LST_DAY_1KM is: %i" ,fillValue)      # Print LST_DAY_1KM fill value
-sprintf("Unit for LST_DAY_1KM is: %s" ,unit)                 # Print LST_DAY_1KM unit 
-```
-
-
-```{r}
-# Plot Results (Line/Scatter Plots)
-# Next, plot a time series of daytime LST for the selected point. Below, filter the LST data to exclude fill values.
-
-lst_SOAP <- lst_SOAP %>%
-  # exclude NoData
-  filter(MOD11A2_006_LST_Day_1km != fillValue)%>%
-  filter(MOD11A2_006_LST_Night_1km != fillValue)
-```
-
-
-```{r}
-# plot LST Day as a time series with some additional formatting using ggplot2.
-
-ggplot(lst_SOAP)+
-  geom_line(aes(x= Date, y = MOD11A2_006_LST_Day_1km), size=1, color="blue")+
-  geom_point(aes(x= Date, y = MOD11A2_006_LST_Day_1km), shape=18 , size = 3, color="blue")+
-  labs(title = "Time Series",
-       x = "Date",
-       y = sprintf( "LST_Day_1km (%s)", unit))+
-  scale_x_date(date_breaks = "16 day")+ 
-  scale_y_continuous(limits = c(250, 325), breaks = seq(250, 325, 10))+
-  theme(plot.title = element_text(face = "bold",size = rel(2.5),hjust = 0.5),
-        axis.title = element_text(face = "bold",size = rel(1)),
-        panel.background = element_rect(fill = "lightgray", colour = "black"),
-        axis.text.x = element_text(face ="bold",color="black", angle= 315 , size = 10),
-        axis.text.y = element_text(face ="bold",color="black", angle= 0, size = 10)
-  )
-```
-
-
-```{r}
-# using the tidyr package, the LST Day and Night values for Grand Canyon NP are being gathered in a single column to be used to make a plot including both LST_Day_1km and LST_Night_1km.
-
-lst_SOAP_DN <- tidyr::gather(lst_SOAP, key = Tstat , value = LST, MOD11A2_006_LST_Day_1km, MOD11A2_006_LST_Night_1km)
-lst_SOAP_DN[1:5,]                     # print the five first observations
-```
-
-
-```{r}
-# plot LST Day and Night as a time series with some additional formatting.
-
-ggplot(lst_SOAP_DN)+
-  geom_line(aes(x= Date, y = LST, color = Tstat), size=1)+
-  geom_point(aes(x= Date, y = LST, color = Tstat), shape=18 , size = 3)+
-  scale_fill_manual(values=c("red", "blue"))+
-  scale_color_manual(values=c('red','blue'))+
-  labs(title = "Time Series",
-       x = "Date",
-       y = sprintf( "LST_Day_1km (%s)",unit))+
-  scale_x_date(date_breaks = "16 day")+  
-  scale_y_continuous(limits = c(250, 325), breaks = seq(250, 325, 10))+
-  theme(plot.title = element_text(face = "bold",size = rel(2.5), hjust = 0.5),
-        axis.title = element_text(face = "bold",size = rel(1)),
-        panel.background = element_rect(fill = "lightgray", colour = "black"),
-        axis.text.x = element_text(face ="bold",color="black", angle= 315 , size = 10),
-        axis.text.y = element_text(face ="bold",color="black", angle= 0, size = 10),
-        legend.position = "bottom",
-        legend.title = element_blank()
-  )
-```
-
-
-```{r}
-# bring in the daytime LST data from SJER , and compare with daytime LST at SOAP , shown below in a scatterplot using ggplot2 package. Here, the dplyr is used to extract the LST_DAY_1km for SJER.
-
-lst_SJER <- df %>%
-  filter(MOD11A2_006_LST_Day_1km != fillValue) %>%        # Filter fill value 
-  filter(Category == "SJER")%>%                           # Filter SJER national park
-  select(Date, MOD11A2_006_LST_Day_1km)                   # Select desired columns
-```
-
-
-```{r}
-# make a scatterplot.
-
-
-ggplot()+
-  geom_point(aes(x=lst_SOAP$MOD11A2_006_LST_Day_1km, y=lst_SJER$MOD11A2_006_LST_Day_1km[-11]), shape=18 , size = 3, color="blue")+
-  labs(title = "MODIS LST: SOAP vs. SJER, 2020",
-       x = sprintf("SOAP: LST_Day_1km (%s)",unit),
-       y = sprintf( "SJER: LST_Day_1km (%s)",unit))+
-  theme(plot.title = element_text(face = "bold",size = rel(1.5), hjust = 0.5),
-        axis.title = element_text(face = "bold",size = rel(1)),
-        panel.background = element_rect(fill = "lightgray", colour = "black"),
-        axis.text.x = element_text(face ="bold",color="black", size = 10),
-        axis.text.y = element_text(face ="bold",color="black", size = 10)
-  )
-
-# this example can provide a template to use for your own research workflows. Leveraging the AppEEARS API for searching, extracting, and formatting analysis ready data, and loading it directly into R means that you can keep your entire research workflow in a single software program, from start to finish.
-
-```
-
-
-# NASA EOS Coding Lab #2
-## Question 1
-**Choose two NEON sites in different ecoregions. Then complete the following for each of your two NEON sites:**
-
-```{r}
-sites = c("JORN","BART")
-```
-
-
-## Question 2
-**Using your Earth Data account submit a point-based request to AppEEARS to pull 250m NDVI from AQUA and TERA for 2017, 2018, & 2019**
-
-```{r}
-
-```
-
-
 
