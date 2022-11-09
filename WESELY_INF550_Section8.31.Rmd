@@ -12,17 +12,47 @@ knitr::opts_chunk$set(echo = TRUE)
 # USGS NWIS Culmination Write Up
 **Write up a 1-page derived data product or research pipeline proposal summary of a project that you might want to explore using USGS NWIS and USGS GDP data. Include the types of data that you would need to implement this project and how you would retrieve them. Save this summary as you will be refining and adding to your ideas over the course of the semester.**
 
-An idea for a research project that I might want to explore using USGS NWIS and USGS GDP data is investigating how watershed attributes affect watershed function in the Sierra Nevada Mountains. Land forms aggregate into watersheds that function as inherent units, reflecting geologic and hydrologic processes. Spatial patterns of land forms are observable in watersheds in the Sierras: talus fields are found in the upper portion of the watershed; cliff bands create linear features without vegetation; depressions accumulate water and enable patches of dense foliage. Landforms aggregated to the watershed-scale may reveal novel patterns of topography’s influence on watershed's functionality compared to previously utilized scales. Furthermore, the watershed becomes more influential in
-the context of predicted extreme fire weather conditions as intensity of winds and solar radiation input
-relate to structural and spatial attributes of the watershed.
+An idea for a research project that I might want to explore using USGS NWIS and USGS GDP data is investigating how watershed attributes affect watershed function in the Sierra Nevada Mountains. Land forms aggregate into watersheds that function as inherent units, reflecting geologic and hydrologic processes. Spatial patterns of land forms are observable in watersheds in the Sierras: talus fields are found in the upper portion of the watershed; cliff bands create linear features without vegetation; depressions accumulate water and enable patches of dense foliage. Landforms aggregated to the watershed-scale may reveal novel patterns of topography’s influence on watershed's functionality compared to previously utilized scales. Furthermore, the watershed becomes more influential in the context of predicted extreme weather conditions as intensity of winds and solar radiation input relate to structural and spatial attributes of the watershed.
 
-USGS has 
+USGS has extensive data that relates to watershed function, including many streamflow measurements at various parts of many watersheds and water quality data across many watersheds. This data could be combine with lidar data to investigate how watershed attributes affect watershed function in the Sierra Nevada Mountains.
 
 **Tables or bullet lists of specific data products**
 
+1) Surface water - streamflow data (current & historical daily data)
+
+2) Surface water - water quality 
+
+3) Surface water - peak streamflow data
+
 **An overarching high-quality figure to show how these data align**
 
+```{r, cache=T}
+library(geoknife)
+library(dataRetrieval)
+
+# download steam flow data for california 
+flow <- readNWISdata(stateCd="CA", 
+                     service="dv", 
+                     parameterCd="00060",
+                     startDate="2015-01-01",
+                     endDate="2020-12-31")
+
+
+# make time series of data
+flow %>%
+  group_by(year,month) %>%
+  summarise(flow = mean(X_00060_00003, na.rm = T))%>%
+  ggplot() +
+  geom_line(aes(x = month,
+                y = flow, 
+                color = year))+
+  labs(title = "Average Streamflow in CA")
+```
+
+
 **One paragraph summarizing how this data or analysis is useful to you and/or the infrastructure.**
+
+This data project would be useful for management of watersheds in the Sierra Nevada Mountains. Knowing how watershed attributes affect watershed function may elucidate watershed attributes that make a specific watershed vulnerable to degradation. If we can identify attributes that strongly influence watershed function, we can prioritize protecting those attributes. Therefore utilizing the USGS NWIS data, and possibly combing it with lidar data, would benefit the infrastructure. 
 
 
 
