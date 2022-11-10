@@ -31,7 +31,7 @@ library(geoknife)
 library(dataRetrieval)
 
 # download steam flow data for california 
-flow <- readNWISdata(stateCd="CA", 
+flow <- readNWISdata(stateCd="NV", 
                      service="dv", 
                      parameterCd="00060",
                      startDate="2015-01-01",
@@ -39,14 +39,19 @@ flow <- readNWISdata(stateCd="CA",
 
 
 # make time series of data
+library(tidyverse, quietly = T)
+library(lubridate, quietly = T)
+
 flow %>%
+  mutate(year = factor(year(dateTime)),
+         month = month(dateTime)) %>%
   group_by(year,month) %>%
   summarise(flow = mean(X_00060_00003, na.rm = T))%>%
   ggplot() +
   geom_line(aes(x = month,
                 y = flow, 
                 color = year))+
-  labs(title = "Average Streamflow in CA")
+  labs(title = "Average Streamflow in NV")
 ```
 
 
